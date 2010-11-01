@@ -2,6 +2,9 @@
  * Server for Chat
  *
  * Alexandre Martani <amartani at gmail com>
+ *
+ * References:
+ * - Threads: http://www.cs.cf.ac.uk/Dave/C/node32.html
  */
 
 #include <stdio.h>
@@ -10,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <pthread.h>
 
 // structs
 
@@ -26,7 +30,9 @@ void error(char *msg);
 string recv_string(int sock);
 void send_string(int sock, string str);
 
+void *do_chld(void *arg);
 void select_command(int sock);
+void client_handle(int sock);
 
 // commands
 
@@ -75,14 +81,14 @@ void free_string(string str)
 int main(int argc, char *argv[])
 {
     int sockfd, newsockfd, portno, clilen;
-    char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    int n;
-    char command;
+    pthread_t chld_thr;
+
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
         exit(1);
     }
+
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket");
@@ -95,17 +101,37 @@ int main(int argc, char *argv[])
             sizeof(serv_addr)) < 0)
             error("ERROR on binding");
     listen(sockfd, 5);
-    clilen = sizeof(cli_addr);
-    newsockfd = accept(sockfd,
-                       (struct sockaddr *) &cli_addr,
-                       &clilen);
-    if (newsockfd < 0)
-        error("ERROR on accept");
-    bzero(buffer,256);
+
+    // Loop forever accepting connections
     while (1) {
-        select_command(newsockfd);
+        clilen = sizeof(cli_addr);
+        newsockfd = accept(sockfd,
+                           (struct sockaddr *) &cli_addr,
+                           &clilen);
+        if (newsockfd < 0)
+            error("ERROR on accept");
+
+        // Create new thread
+        pthread_create(&chld_thr, 0, do_chld, (void*) newsockfd);
     }
     return 0;
+}
+
+// New threads calls this
+void *do_chld(void *arg)
+{
+    int sock = (int) arg;
+
+    client_handle(sock);
+}
+
+// Handle a connection with a client
+
+void client_handle(int sock)
+{
+    while (1) {
+        select_command(sock);
+    }
 }
 
 // Listen to a command and execute
@@ -116,6 +142,7 @@ void select_command(int sock)
 
     n = read(sock, &command, sizeof(command));
     if (n < 0) error("ERROR reading from socket");
+
     switch (command) {
     case 'L':
         cmd_list(sock);
@@ -154,3 +181,4 @@ void cmd_unknown(int sock)
     n = write(sock,"Desconhecido",12);
     if (n < 0) error("ERROR writing to socket");
 }
+
