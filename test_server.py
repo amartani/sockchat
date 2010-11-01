@@ -18,23 +18,28 @@ def send_string(socket, string):
     socket.send(struct.pack("I", len(string)))
     socket.send(string)
 
+def connect_socket():
+    sock = None
+    retry = 5
+    while retry:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', PORT))
+            break
+        except:
+            retry -= 1
+            if retry == 0:
+                assert False, "Could not connect socket"
+            time.sleep(1)
+    sock.settimeout(1.0)
+    return sock
+
 
 class TestServer():
 
     def setup_method(self, method):
         self.server_process = subprocess.Popen([PROGRAM, str(PORT)], stdout=sys.stderr, stderr=sys.stderr)
-        retry = 5
-        while retry:
-            try:
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.connect(('localhost', PORT))
-                break
-            except:
-                retry -= 1
-                if retry == 0:
-                    assert False
-                time.sleep(1)
-        self.socket.settimeout(1.0)
+        self.socket = connect_socket()
 
     def teardown_method(self, method):
         self.socket.close()
@@ -57,21 +62,11 @@ class TestServer():
         send_string(self.socket, test_string)
         assert test_string == recv_string(self.socket)
 
-class Te_stServerWithMultipleClients():
+class TestServerWithMultipleClients():
 
     def setup_method(self, method):
         self.server_process = subprocess.Popen([PROGRAM, str(PORT)])
-        self.sockets = list()
-        for i in range(10):
-            retry = True
-            while retry:
-                try:
-                    socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    socket.connect(('localhost', PORT))
-                    self.sockets.add(socket)
-                    retry = False
-                except:
-                    pass
+        self.sockets = list(connect_socket() for i in range(10))
 
     def teardown_method(self, method):
         for socket in self.sockets:
