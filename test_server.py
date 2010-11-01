@@ -62,6 +62,16 @@ class TestServer():
         send_string(self.socket, test_string)
         assert test_string == recv_string(self.socket)
 
+    def test_multiple_echo(self):
+        test_string = "This is a test string!"
+        self.socket.send("E")
+        send_string(self.socket, test_string)
+        assert test_string == recv_string(self.socket)
+        test_string = "This is another test string!"
+        self.socket.send("E")
+        send_string(self.socket, test_string)
+        assert test_string == recv_string(self.socket)
+
 class TestServerWithMultipleClients():
 
     def setup_method(self, method):
