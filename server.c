@@ -11,11 +11,62 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+// structs
+
+struct string {
+    uint size;
+    char *str;
+};
+
+typedef struct string string;
+
+// function prototypes
+
+void error(char *msg);
+string recv_string(int sock);
+void send_string(int sock, string str);
+
+// commands
+
+void cmd_echo(int sock);
+
+// helper functions
+
 void error(char *msg)
 {
     perror(msg);
     exit(1);
 }
+
+// helper function to send and receive string structs
+
+string recv_string(int sock)
+{
+    string result;
+    int n;
+    n = read(sock, &result.size, sizeof(result.size));
+    if (n < 0) error("ERROR");
+    result.str = (char*) malloc(result.size*sizeof(char));
+    n = read(sock, result.str, result.size*sizeof(char));
+    if (n < 0) error("ERROR");
+    return result;
+}
+
+void send_string(int sock, string str)
+{
+    int n;
+    n = write(sock, &str.size, sizeof(str.size));
+    if (n < 0) error("ERROR");
+    n = write(sock, str.str, str.size*sizeof(char));
+    if (n < 0) error("ERROR");
+}
+
+void free_string(string str)
+{
+    free(str.str);
+}
+
+// main function
 
 int main(int argc, char *argv[])
 {
@@ -39,7 +90,7 @@ int main(int argc, char *argv[])
     if (bind(sockfd, (struct sockaddr *) &serv_addr,
             sizeof(serv_addr)) < 0)
             error("ERROR on binding");
-    listen(sockfd,5);
+    listen(sockfd, 5);
     clilen = sizeof(cli_addr);
     newsockfd = accept(sockfd,
                        (struct sockaddr *) &cli_addr,
@@ -48,12 +99,15 @@ int main(int argc, char *argv[])
         error("ERROR on accept");
     bzero(buffer,256);
     while (1) {
-        n = read(newsockfd, &command, sizeof(int));
+        n = read(newsockfd, &command, sizeof(command));
         if (n < 0) error("ERROR reading from socket");
         switch (command) {
         case 'L':
             n = write(newsockfd,"Comando L",9);
             if (n < 0) error("ERROR writing to socket");
+            break;
+        case 'E':
+            cmd_echo(newsockfd);
             break;
         default:
             n = write(newsockfd,"Desconhecido",12);
@@ -64,3 +118,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+// commands
+
+void cmd_echo(int sock)
+{
+    string str;
+    str = recv_string(sock);
+    send_string(sock, str);
+}
