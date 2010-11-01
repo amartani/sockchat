@@ -20,7 +20,7 @@ def send_string(socket, string):
 
 def connect_socket():
     sock = None
-    retry = 5
+    retry = 10
     while retry:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,7 +33,6 @@ def connect_socket():
             time.sleep(1)
     sock.settimeout(1.0)
     return sock
-
 
 class TestServer():
 
