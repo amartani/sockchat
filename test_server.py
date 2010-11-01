@@ -98,4 +98,7 @@ class TestServerWithMultipleClients():
             assert ("Test number %d." % number) == recv_string(sock)
             number += 1
 
+    def test_multiple_echo(self):
+        self.test_echo()
+        self.test_echo()
 
