@@ -76,3 +76,16 @@ class TestServerWithMultipleClients():
 
     def test_setup_and_teardown(self):
         pass
+
+    def test_echo(self):
+        number = 0
+        for sock in self.sockets:
+            sock.send("E")
+            send_string(sock, "Test number %d." % number)
+            number += 1
+        number = 0
+        for sock in self.sockets:
+            assert ("Test number %d." % number) == recv_string(sock)
+            number += 1
+
+

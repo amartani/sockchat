@@ -26,9 +26,13 @@ void error(char *msg);
 string recv_string(int sock);
 void send_string(int sock, string str);
 
+void select_command(int sock);
+
 // commands
 
+void cmd_list(int sock);
 void cmd_echo(int sock);
+void cmd_unknown(int sock);
 
 // helper functions
 
@@ -99,30 +103,54 @@ int main(int argc, char *argv[])
         error("ERROR on accept");
     bzero(buffer,256);
     while (1) {
-        n = read(newsockfd, &command, sizeof(command));
-        if (n < 0) error("ERROR reading from socket");
-        switch (command) {
-        case 'L':
-            n = write(newsockfd,"Comando L",9);
-            if (n < 0) error("ERROR writing to socket");
-            break;
-        case 'E':
-            cmd_echo(newsockfd);
-            break;
-        default:
-            n = write(newsockfd,"Desconhecido",12);
-            if (n < 0) error("ERROR writing to socket");
-            break;
-        }
+        select_command(newsockfd);
     }
     return 0;
 }
 
+// Listen to a command and execute
+void select_command(int sock)
+{
+    int n;
+    char command;
+
+    n = read(sock, &command, sizeof(command));
+    if (n < 0) error("ERROR reading from socket");
+    switch (command) {
+    case 'L':
+        cmd_list(sock);
+        break;
+    case 'E':
+        cmd_echo(sock);
+        break;
+    default:
+        cmd_unknown(sock);
+        break;
+    }
+}
+
 // commands
+
+void cmd_list(int sock)
+{
+    int n;
+
+    n = write(sock, "Comando L",9);
+    if (n < 0) error("ERROR writing to socket");
+}
 
 void cmd_echo(int sock)
 {
     string str;
+
     str = recv_string(sock);
     send_string(sock, str);
+}
+
+void cmd_unknown(int sock)
+{
+    int n;
+
+    n = write(sock,"Desconhecido",12);
+    if (n < 0) error("ERROR writing to socket");
 }
