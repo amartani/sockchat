@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
 
-gcc server.c -o server.out -pthread
+gcc -g server.c -o server.out -pthread
 py.test
 

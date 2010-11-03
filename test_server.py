@@ -8,15 +8,20 @@ PORT = 25864
 PROGRAM = "./server.out"
 N_CLIENTS = 10
 
-def recv_string(socket):
-    size_str = socket.recv(4)
+def recv_string(sock):
+    size_str = sock.recv(4)
     size = struct.unpack("I", size_str)[0]
-    msg = socket.recv(size)
+    msg = sock.recv(size)
     return msg
 
-def send_string(socket, string):
-    socket.send(struct.pack("I", len(string)))
-    socket.send(string)
+def send_string(sock, string):
+    sock.send(struct.pack("I", len(string)))
+    sock.send(string)
+
+def recv_int(sock):
+    num_str = sock.recv(4)
+    num = struct.unpack("I", num_str)[0]
+    return num
 
 def connect_socket():
     sock = None
@@ -31,7 +36,7 @@ def connect_socket():
             if retry == 0:
                 assert False, "Could not connect socket"
             time.sleep(1)
-    sock.settimeout(1.0)
+    sock.settimeout(2.0)
     return sock
 
 class TestServer():
@@ -44,16 +49,12 @@ class TestServer():
         self.socket.close()
         self.server_process.kill()
         self.server_process.wait()
+        time.sleep(1.0)
 
     def test_unknown(self):
         self.socket.send("P")
         msg = self.socket.recv(12)
         assert msg == "Desconhecido"
-
-    def test_simple(self):
-        self.socket.send("L")
-        msg = self.socket.recv(10)
-        assert msg == "Comando L"
 
     def test_echo(self):
         test_string = "This is a test string!"
@@ -71,6 +72,17 @@ class TestServer():
         send_string(self.socket, test_string)
         assert test_string == recv_string(self.socket)
 
+    def test_username(self):
+        self.socket.send("C")
+        send_string(self.socket, "Armando")
+
+    def test_list(self):
+        self.socket.send("C")
+        send_string(self.socket, "Armando")
+        self.socket.send("L")
+        assert 1 == recv_int(self.socket)
+        assert "Armando" == recv_string(self.socket)
+
 class TestServerWithMultipleClients():
 
     def setup_method(self, method):
@@ -82,6 +94,7 @@ class TestServerWithMultipleClients():
             socket.close()
         self.server_process.kill()
         self.server_process.wait()
+        time.sleep(1.0)
 
     def test_setup_and_teardown(self):
         pass
@@ -100,4 +113,29 @@ class TestServerWithMultipleClients():
     def test_multiple_echo(self):
         self.test_echo()
         self.test_echo()
+
+    def test_usernames(self):
+        usernames = list("client %d" % i for i in range(10))
+        for sock, username in zip(self.sockets, usernames):
+            # Connect
+            sock.send("C")
+            send_string(sock, username)
+
+    def test_list(self):
+        usernames = list("client %d" % i for i in range(10))
+        for sock, username in zip(self.sockets, usernames):
+            # Connect
+            sock.send("C")
+            send_string(sock, username)
+        for sock in self.sockets:
+            sock.send("L")
+            assert 10 == recv_int(sock)
+            names = list()
+            for i in range(10):
+                name = recv_string(sock)
+                names.append(name)
+            names.sort()
+            assert usernames == names
+
+
 

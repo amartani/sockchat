@@ -11,18 +11,90 @@
 
 // function prototypes
 
+// --------- Data structure -----------
+
+// ---- List of clients -----
+
+typedef struct client_node client_node_t;
+typedef struct clients_list clients_list_t;
+
+struct client_node {
+    int sock;
+    string nick;
+    client_node_t *prev, *next;
+};
+
+struct clients_list {
+    pthread_rwlock_t *lock;
+    client_node_t *first, *last;
+    int size;
+};
+
+void initialize_clients_list();
+client_node_t *insert_client(int sock);
+
+// ---- Helper functions ----
+
 string recv_string(int sock);
 void send_string(int sock, string str);
 
 void *do_chld(void *arg);
-void select_command(int sock);
+void select_command(int sock, client_node_t *client_node);
 void client_handle(int sock);
 
-// commands
+// ---- commands ----
 
+void cmd_set_nick(int sock, client_node_t *client_node);
 void cmd_list(int sock);
 void cmd_echo(int sock);
 void cmd_unknown(int sock);
+
+// -------- Functions -----------
+
+// ---- List of clients  ----
+
+clients_list_t *clients_list;
+
+void initialize_clients_list()
+{
+    clients_list = (clients_list_t*)malloc(sizeof(clients_list_t));
+
+    clients_list->first = NULL;
+    clients_list->last = NULL;
+
+    // Initialize lock
+    clients_list->lock = (pthread_rwlock_t*) malloc(sizeof(pthread_rwlock_t));
+    pthread_rwlock_init(clients_list->lock, NULL);
+}
+
+client_node_t *insert_client(int sock)
+{
+    client_node_t* new_client = (client_node_t*) malloc(sizeof(client_node_t));
+    new_client->sock = sock;
+    new_client->nick.size = 0;
+    new_client->nick.str = NULL;
+    new_client->prev = NULL;
+    new_client->next = NULL;
+
+    // Lock client list for writer
+    pthread_rwlock_wrlock(clients_list->lock);
+
+    clients_list->size++;
+
+    if (clients_list->first == NULL) {
+        clients_list->first = new_client;
+        clients_list->last = new_client;
+    } else {
+        new_client->prev = clients_list->last;
+        clients_list->last->next = new_client;
+        clients_list->last = new_client;
+    }
+
+    // Unlock client list
+    pthread_rwlock_unlock(clients_list->lock);
+
+    return new_client;
+}
 
 // main function
 
@@ -50,6 +122,8 @@ int main(int argc, char *argv[])
             sizeof(serv_addr)) < 0)
             error("ERROR on binding");
     listen(sockfd, 5);
+
+    initialize_clients_list();
 
     // Loop forever accepting connections
     while (1) {
@@ -83,13 +157,15 @@ void *do_chld(void *arg)
 
 void client_handle(int sock)
 {
+    client_node_t *client_node = insert_client(sock);
+
     while (1) {
-        select_command(sock);
+        select_command(sock, client_node);
     }
 }
 
 // Listen to a command and execute
-void select_command(int sock)
+void select_command(int sock, client_node_t *client_node)
 {
     int n;
     char command;
@@ -98,6 +174,9 @@ void select_command(int sock)
     if (n < 0) error("ERROR reading from socket");
 
     switch (command) {
+    case 'C':
+        cmd_set_nick(sock, client_node);
+        break;
     case 'L':
         cmd_list(sock);
         break;
@@ -112,12 +191,41 @@ void select_command(int sock)
 
 // commands
 
+void cmd_set_nick(int sock, client_node_t *client_node)
+{
+    string nick;
+
+    nick = recv_string(sock);
+
+    // Lock client list for writing
+    pthread_rwlock_wrlock(clients_list->lock);
+
+    free_string(client_node->nick);
+    client_node->nick = nick;
+
+    // Unlock
+    pthread_rwlock_unlock(clients_list->lock);
+}
+
 void cmd_list(int sock)
 {
-    int n;
+    int res, i;
+    client_node_t *client_node;
 
-    n = write(sock, "Comando L",9);
-    if (n < 0) error("ERROR writing to socket");
+    // Lock client list for reading
+    pthread_rwlock_rdlock(clients_list->lock);
+
+    // Send number of clients
+    res = write(sock, &clients_list->size, sizeof(clients_list->size));
+    if (res < 0) error("ERROR writing to socket");
+
+    // Send nickname of each client
+    for (client_node = clients_list->first; client_node != NULL; client_node = client_node->next) {
+        send_string(sock, client_node->nick);
+    }
+
+    // Unlock
+    pthread_rwlock_unlock(clients_list->lock);
 }
 
 void cmd_echo(int sock)
