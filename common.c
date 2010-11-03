@@ -10,25 +10,29 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-// ------- Generic helper functions --------
-
-void error(char *msg);
-
-void error(char *msg)
-{
-    perror(msg);
-    exit(1);
-}
-
-
 // ------- String --------
-
 struct string {
     unsigned int size;
     char *str;
 };
 
 typedef struct string string;
+
+
+// ------- Function Prototypes --------
+void error(char *msg);
+string recv_string(int sock);
+void send_string(int sock, string str);
+void free_string(string str)
+
+
+// ------- Generic helper functions --------
+
+void error(char *msg)
+{
+    perror(msg);
+    exit(1);
+}
 
 // helper function to send and receive string structs
 
