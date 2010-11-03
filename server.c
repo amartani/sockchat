@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
             error("ERROR on accept");
 
         // Create new thread
-        pthread_create(&chld_thr, 0, do_chld, (void*) newsockfd);
+        pthread_create(&chld_thr, 0, do_chld, (void*) &newsockfd);
     }
     return 0;
 }
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 // New threads calls this
 void *do_chld(void *arg)
 {
-    int sock = (int) arg;
+    int sock = *((int*)arg);
 
     client_handle(sock);
 }
