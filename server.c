@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
     int sockfd, newsockfd, portno, clilen;
     struct sockaddr_in serv_addr, cli_addr;
     pthread_t chld_thr;
+    void *arg;
 
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
@@ -111,8 +112,12 @@ int main(int argc, char *argv[])
         if (newsockfd < 0)
             error("ERROR on accept");
 
+        // Copy argument to be passed to do_chld
+        arg = malloc(sizeof(newsockfd));
+        memcpy(arg, &newsockfd, sizeof(newsockfd));
+
         // Create new thread
-        pthread_create(&chld_thr, 0, do_chld, (void*) &newsockfd);
+        pthread_create(&chld_thr, 0, do_chld, arg);
     }
     return 0;
 }
@@ -121,6 +126,7 @@ int main(int argc, char *argv[])
 void *do_chld(void *arg)
 {
     int sock = *((int*)arg);
+    free(arg);
 
     client_handle(sock);
 }
