@@ -127,6 +127,7 @@ class TestServerWithMultipleClients():
             # Connect
             sock.send("C")
             send_string(sock, username)
+        time.sleep(1.0)
         for sock in self.sockets:
             sock.send("L")
             assert 10 == recv_int(sock)
