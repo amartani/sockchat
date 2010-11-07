@@ -83,6 +83,16 @@ class TestServer():
         assert 1 == recv_int(self.socket)
         assert "Armando" == recv_string(self.socket)
 
+    def test_list_multiple(self):
+        self.socket.send("C")
+        send_string(self.socket, "Armando")
+        self.socket.send("L")
+        assert 1 == recv_int(self.socket)
+        assert "Armando" == recv_string(self.socket)
+        self.socket.send("L")
+        assert 1 == recv_int(self.socket)
+        assert "Armando" == recv_string(self.socket)
+
 class TestServerWithMultipleClients():
 
     def setup_method(self, method):
