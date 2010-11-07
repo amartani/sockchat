@@ -60,16 +60,19 @@ class TestServer():
         test_string = "This is a test string!"
         self.socket.send("E")
         send_string(self.socket, test_string)
+        assert "E" == self.socket.recv(1)
         assert test_string == recv_string(self.socket)
 
     def test_multiple_echo(self):
         test_string = "This is a test string!"
         self.socket.send("E")
         send_string(self.socket, test_string)
+        assert "E" == self.socket.recv(1)
         assert test_string == recv_string(self.socket)
         test_string = "This is another test string!"
         self.socket.send("E")
         send_string(self.socket, test_string)
+        assert "E" == self.socket.recv(1)
         assert test_string == recv_string(self.socket)
 
     def test_username(self):
@@ -120,6 +123,7 @@ class TestServerWithMultipleClients():
             number += 1
         number = 0
         for sock in self.sockets:
+            assert "E" == sock.recv(1)
             assert ("Test number %d." % number) == recv_string(sock)
             number += 1
 
