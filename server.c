@@ -236,8 +236,13 @@ void cmd_list(int sock)
 void cmd_echo(int sock)
 {
     string str;
+    int res;
 
     str = recv_string(sock);
+
+    res = write(sock, "E", 1);
+    if (res < 0) error("ERROR writing to socket");
+
     send_string(sock, str);
 }
 
