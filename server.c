@@ -61,6 +61,7 @@ void initialize_clients_list()
 
     clients_list->first = NULL;
     clients_list->last = NULL;
+    clients_list->size = 0;
 
     // Initialize lock
     clients_list->lock = (pthread_rwlock_t*) malloc(sizeof(pthread_rwlock_t));
@@ -211,6 +212,10 @@ void cmd_list(int sock)
 {
     int res, i;
     client_node_t *client_node;
+
+    // Send command
+    res = write(sock, "L", 1);
+    if (res < 0) error("ERROR writing to socket");
 
     // Lock client list for reading
     pthread_rwlock_rdlock(clients_list->lock);
