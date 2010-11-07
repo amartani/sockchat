@@ -80,6 +80,7 @@ class TestServer():
         self.socket.send("C")
         send_string(self.socket, "Armando")
         self.socket.send("L")
+        assert "L" == self.socket.recv(1)
         assert 1 == recv_int(self.socket)
         assert "Armando" == recv_string(self.socket)
 
@@ -87,9 +88,11 @@ class TestServer():
         self.socket.send("C")
         send_string(self.socket, "Armando")
         self.socket.send("L")
+        assert "L" == self.socket.recv(1)
         assert 1 == recv_int(self.socket)
         assert "Armando" == recv_string(self.socket)
         self.socket.send("L")
+        assert "L" == self.socket.recv(1)
         assert 1 == recv_int(self.socket)
         assert "Armando" == recv_string(self.socket)
 
@@ -140,6 +143,7 @@ class TestServerWithMultipleClients():
         time.sleep(1.0)
         for sock in self.sockets:
             sock.send("L")
+            assert "L" == sock.recv(1)
             assert 10 == recv_int(sock)
             names = list()
             for i in range(10):
@@ -148,5 +152,33 @@ class TestServerWithMultipleClients():
             names.sort()
             assert usernames == names
 
+    def test_disconnection(self):
+        self.test_usernames()
+        time.sleep(1.0)
+        #disconnected = self.sockets.pop(-1)
+        #disconnected.close()
+        #time.sleep(1.0)
+        usernames = list("client %d" % i for i in range(9))
+        for sock in self.sockets:
+            sock.send("L")
+            assert "L" == sock.recv(1)
+            assert 9 == recv_int(sock)
+            names = list()
+            for i in range(9):
+                name = recv_string(sock)
+                names.append(name)
+            names.sort()
+            assert usernames == names
+
+#    def test_message(self):
+#        self.test_usernames()
+#        message = "TEST MESSAGE"
+#        sender = self.sockets[0]
+#        sender.send("M")
+#        send_string(sender, message)
+#        for sock in self.sockets:
+#            assert "M" == sock.recv(1)
+#            assert "client 0" == recv_string(sock)
+#            assert message == recv_string(sock)
 
 
