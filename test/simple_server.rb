@@ -21,7 +21,7 @@ class SimpleServer < TCPServer
 
   def kill
     @sessions.each(&:close) if @sessions
-    @sockets.each(&:close)  if @sockets
+    # @sockets.each(&:close)  if @sockets
     @runner.kill            if @runner
     close
   end

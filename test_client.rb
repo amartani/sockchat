@@ -1,15 +1,13 @@
-DEBUG = true
+DEBUG_CLIENT = true
 
-PATH = File.dirname(__FILE__)
-require "#{PATH}/test/test_helper.rb"
-
-system "cd #{PATH} && ./compile_client.sh" unless DEBUG
+require "#{File.dirname(__FILE__)}/test/test_helper.rb"
+system "cd #{PATH} && ./compile_client.sh" unless DEBUG_CLIENT
 
 class TestClient < TestSockchat
   def setup
     @coordinator = FakeCoordinator.new
     @server      = FakeServer.new 6000
-    @client      = DEBUG ? FakeClient.new : RealClient.popen('client.out')
+    @client      = DEBUG_CLIENT ? FakeClient.new : RealClient.popen('client.out')
     @coordinator.run
     @server.run
   end
