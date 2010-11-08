@@ -36,7 +36,7 @@ class FakeClient
     match_command 'L', @server_socket.read(1)
     number_of_clients = @server_socket.read(4).to_unsigned
     number_of_clients.times.map do
-      Datum.get_from(session).data
+      Datum.get_from(@server_socket).data
     end
   end
 
@@ -45,7 +45,7 @@ class FakeClient
     @server_socket.write 'E'
     @server_socket.write sent_message
     match_command 'E', @server_socket.read(1)
-    @server_socket.read sent_message.lenght
+    @server_socket.read sent_message.datum_size
   end
 
   def listen

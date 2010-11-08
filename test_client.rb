@@ -15,12 +15,10 @@ class TestClient < TestSockchat
   end
 
   def generate_other_clients
-    wait_for_timeout do
-      ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
-        hash[name] = FakeClient.new
-        hash[name].connect name
-        hash
-      end
+    clients = ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
+      hash[name] = FakeClient.new
+      hash[name].connect name
+      hash
     end
   end
 
@@ -34,19 +32,22 @@ class TestClient < TestSockchat
   end
 
   def test_connect_to_server
-    wait_for_timeout do
+    wait_for_timeout(1.5) do
       @client.connect 'Joao da Silva'
-      assert @server.clients.values.include?('Joao da Silva')
+      sleep 0.5
+      assert @server.clients.values.include?('Joao da Silva'), 'Client not connected on server'
     end
   end
 
   def test_send_heartbeat
-    wait_for_timeout do
+    wait_for_timeout(1.5) do
+      @client.connect 'HeartBeater'
       @client.heartbeat
-      assert @server.received_heartbeat?
+      sleep 0.5
+      assert @server.received_heartbeat?, 'Heartbeat not received on server'
     end
   end
-
+  
   def test_ask_for_clients
     wait_for_timeout do
       @client.connect 'Ze do Caixao'
@@ -57,37 +58,38 @@ class TestClient < TestSockchat
       other_clients.values.each{ |c| c.logout }
     end
   end
-
+  
   def test_echo
     wait_for_timeout do
+      @client.connect 'PingPong Tester'
       message = "ECHO TEST MESSAGE!"
-      asser_equal @client.echo(message), message
+      assert_equal @client.echo(message), message, 'Message not echoed'
     end
   end
-
+  
   def test_client_sends_and_other_receives_messages
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
       other_client = FakeClient.new
       other_client.connect 'Curupira'
       message = 'Voce viu minha cabeca? Acho que deixei la atras!'
-
+  
       @client.send_message message
       other_client.listen
-      assert_equal other_client.messages.last, "#{Mula Sem Cabeca}: #{message}"
+      assert_equal other_client.messages.last, "Mula Sem Cabeca: #{message}"
     end
   end
-
+  
   def test_other_sends_and_client_receives_messages
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
       other_client = FakeClient.new
       other_client.connect 'Curupira'
       message = 'Achei, vou passar de calcanhar para voce!'
-
+  
       other_client.send_message message
       @client.listen
-      assert_equal @client.messages.last, "#{Curupira}: #{message}"
+      assert_equal @client.messages.last, "Curupira: #{message}"
     end
   end
 end
