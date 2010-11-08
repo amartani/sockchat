@@ -26,17 +26,22 @@ class FakeServer < SimpleServer
     when 'M'
       message = Datum.string "#{@clients[session]}: #{Datum.get_from(session).data}"
       @clients.each do |s, name|
-        s.write(message) if s != session
+        if s != session
+          s.write 'M'
+          s.write message
+        end
       end
     when 'H'
       @received_heartbeat = true
     when 'L'
+      session.write 'L'
       session.write UnsignedDatum[@clients.size]
       @clients.each do |s, name|
         session.write Datum.string(name)
       end
     when 'E'
       message = Datum.get_from(session)
+      session.write 'E'
       session.write message
     else
       raise RuntimeError, "Comando invalido: #{cmd}"
