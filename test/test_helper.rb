@@ -17,22 +17,18 @@ class TestSockchat < Test::Unit::TestCase
     @client.logout
   end
 
-  def wait_for_timeout(&block)
+  def wait_for_timeout(timeout = 1, &block)
     lock = Monitor.new
     cond = lock.new_cond
 
     thread = Thread.start do
-      lock.synchronize do
-        block.call
-        cond.signal
-      end
+      block.call
+      lock.synchronize{ cond.signal }
     end
 
     Thread.start do
-      lock.synchronize do
-        sleep 1
-        cond.signal
-      end
+      sleep timeout
+      lock.synchronize{ cond.signal }
     end
 
     lock.synchronize do
