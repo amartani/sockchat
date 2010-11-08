@@ -5,8 +5,9 @@ class FakeServer < SimpleServer
   attr_accessor :coordinator, :clients
   def initialize(port = 6000)
     super 'localhost', port
-    @coordinator = TCPSocket.new 'localhost', 5000
+    @coordinator        = TCPSocket.new 'localhost', 5000
     @received_heartbeat = false
+    @clients            = {}
   end
 
   def received_heartbeat?
@@ -40,7 +41,7 @@ class FakeServer < SimpleServer
         session.write Datum.string(name)
       end
     when 'E'
-      message = Datum.get_from(session)
+      message = Datum.get_from(session).data
       session.write 'E'
       session.write message
     else

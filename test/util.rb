@@ -19,20 +19,20 @@ class UnsignedDatum < BitStruct
 end
 
 class Datum < BitStruct
-  signed :lenght, 32
+  signed :datum_size, 32
   rest   :data
 
   def self.get_from(resource)
-    instance        = self.new
-    instance.lenght = resource.read(4).to_unsigned
-    instance.data   = resource.read datum.lenght
+    instance            = self.new
+    instance.datum_size = resource.read(4).to_unsigned
+    instance.data       = resource.read instance.datum_size
     instance
   end
 
   def self.string(value)
-    instance        = self.new
-    instance.lenght = value.lenght
-    instance.data   = value
+    instance            = self.new
+    instance.datum_size = value.length
+    instance.data       = value
     instance
   end
 end

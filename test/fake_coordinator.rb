@@ -13,6 +13,7 @@ class FakeCoordinator < SimpleServer
   def request_handler(session, cmd)
     case cmd
     when 'C'
+      session.write 'C'
       10.times do |n|
         session.write ServerConnectionInfo.by_params('127.0.0.1', 6000+n)
       end
