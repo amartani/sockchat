@@ -1,12 +1,15 @@
+DEBUG = true
+
 PATH = File.dirname(__FILE__)
-# system "cd #{PATH} && ./compile_client.sh"
 require "#{PATH}/test/test_helper.rb"
+
+system "cd #{PATH} && ./compile_client.sh" unless DEBUG
 
 class TestClient < Test::Unit::TestCase
   def setup
     @coordinator = FakeCoordinator.new
     @server      = FakeServer.new 6000
-    @client      = FakeClient.new
+    @client      = DEBUG ? FakeClient.new : RealClient.popen('client.out')
     @coordinator.run
     @server.run
   end
@@ -26,11 +29,29 @@ class TestClient < Test::Unit::TestCase
   end
 
   def wait_for_timeout(&block)
-    thread = Thread.start &block
-    sleep 1
-    alive = thread.alive?
-    assert !alive
-    thread.kill if alive
+    lock = Monitor.new
+    cond = lock.new_cond
+
+    thread = Thread.start do
+      lock.synchronize do
+        block.call
+        cond.signal
+      end
+    end
+
+    Thread.start do
+      lock.synchronize do
+        sleep 1
+        cond.signal
+      end
+    end
+
+    lock.synchronize do
+      cond.wait
+      alive = thread.alive?
+      assert !alive
+      thread.kill if alive
+    end
   end
 
   def test_ask_for_servers_to_coordinator
@@ -84,6 +105,19 @@ class TestClient < Test::Unit::TestCase
       @client.send_message message
       other_client.listen
       assert_equal other_client.messages.last, "#{Mula Sem Cabeca}: #{message}"
+    end
+  end
+
+  def test_other_sends_and_client_receives_messages
+    wait_for_timeout do
+      @client.connect 'Mula Sem Cabeca'
+      other_client = FakeClient.new
+      other_client.connect 'Curupira'
+      message = 'Achei, vou passar de calcanhar para voce!'
+
+      other_client.send_message message
+      @client.listen
+      assert_equal @client.messages.last, "#{Curupira}: #{message}"
     end
   end
 end

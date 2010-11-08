@@ -20,17 +20,3 @@ class RealServer < IO
     close
   end
 end
-
-class RealClient < IO
-  def popen(cmd)
-    super "./#{PATH}/#{cmd}", 'r+'
-  end
-
-  def send_message(message)
-    puts message
-  end
-
-  def logout
-    close
-  end
-end
