@@ -5,7 +5,7 @@ require "#{PATH}/test/test_helper.rb"
 
 system "cd #{PATH} && ./compile_client.sh" unless DEBUG
 
-class TestClient < Test::Unit::TestCase
+class TestClient < TestSockchat
   def setup
     @coordinator = FakeCoordinator.new
     @server      = FakeServer.new 6000
@@ -14,43 +14,11 @@ class TestClient < Test::Unit::TestCase
     @server.run
   end
 
-  def teardown
-    @coordinator.kill
-    @server.kill
-    @client.logout
-  end
-
   def generate_other_clients
     ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
       hash[name] = FakeClient.new
       hash[name].connect name
       hash
-    end
-  end
-
-  def wait_for_timeout(&block)
-    lock = Monitor.new
-    cond = lock.new_cond
-
-    thread = Thread.start do
-      lock.synchronize do
-        block.call
-        cond.signal
-      end
-    end
-
-    Thread.start do
-      lock.synchronize do
-        sleep 1
-        cond.signal
-      end
-    end
-
-    lock.synchronize do
-      cond.wait
-      alive = thread.alive?
-      assert !alive
-      thread.kill if alive
     end
   end
 
