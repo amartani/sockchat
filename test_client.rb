@@ -15,10 +15,12 @@ class TestClient < TestSockchat
   end
 
   def generate_other_clients
-    ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
-      hash[name] = FakeClient.new
-      hash[name].connect name
-      hash
+    wait_for_timeout do
+      ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
+        hash[name] = FakeClient.new
+        hash[name].connect name
+        hash
+      end
     end
   end
 

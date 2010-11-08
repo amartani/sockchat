@@ -9,6 +9,7 @@ class FakeClient
   def ask_for_servers
     @coordinator_socket = TCPSocket.new 'localhost', 5000
     @coordinator_socket.write 'C'
+    match_command 'C', @coordinator_socket.read(1)
     @servers = 10.times.map do
       ServerConnectionInfo.by_data @coordinator_socket.read(6)
     end
@@ -32,6 +33,7 @@ class FakeClient
 
   def ask_for_clients
     @server_socket.write 'L'
+    match_command 'L', @server_socket.read(1)
     number_of_clients = @server_socket.read(4).to_unsigned
     number_of_clients.times.map do
       Datum.get_from(session).data
@@ -42,6 +44,7 @@ class FakeClient
     sent_message = Datum.string(message)
     @server_socket.write 'E'
     @server_socket.write sent_message
+    match_command 'E', @server_socket.read(1)
     @server_socket.read sent_message.lenght
   end
 
@@ -53,5 +56,9 @@ class FakeClient
 
   def logout
     @server_socket.close if @server_socket
+  end
+
+  def match_command(expected, cmd)
+    raise "Command Not Match! Expected #{expected}, but got #{cmd}" unless expected == cmd
   end
 end

@@ -18,24 +18,11 @@ class TestSockchat < Test::Unit::TestCase
   end
 
   def wait_for_timeout(timeout = 1, &block)
-    lock = Monitor.new
-    cond = lock.new_cond
-
-    thread = Thread.start do
-      block.call
-      lock.synchronize{ cond.signal }
-    end
-
-    Thread.start do
+    timeout_thread = Thread.start do
       sleep timeout
-      lock.synchronize{ cond.signal }
+      raise RuntimeError, "Execution exceeded timeout of #{timeout} seconds!"
     end
-
-    lock.synchronize do
-      cond.wait
-      alive = thread.alive?
-      assert !alive
-      thread.kill if alive
-    end
+    block.call
+    timeout_thread.kill if timeout_thread.alive?
   end
 end
