@@ -1,13 +1,15 @@
 # Assuming that Coordinator runs on port 5000
 
 class FakeCoordinator < SimpleServer
+  attr_accessor :heartbeats
   def initialize
     super 'localhost', 5000
     @received_heartbeat = false
+    @heartbeats         = 0
   end
 
   def received_heartbeat?
-    @received_heartbeat
+    @heartbeats > 0
   end
 
   def request_handler(session, cmd)
@@ -18,7 +20,7 @@ class FakeCoordinator < SimpleServer
         session.write ServerConnectionInfo.by_params('127.0.0.1', 6000+n)
       end
     when 'S'
-      @received_heartbeat = true
+      @heartbeats += 1
     else
       raise RuntimeError, "Comando invalido: #{cmd}"
     end

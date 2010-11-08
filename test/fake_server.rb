@@ -2,16 +2,21 @@
 # and Server that runs on 6000 will be used on test
 
 class FakeServer < SimpleServer
-  attr_accessor :coordinator, :clients
+  attr_accessor :coordinator, :clients, :heartbeats
   def initialize(port = 6000)
     super 'localhost', port
-    @coordinator        = TCPSocket.new 'localhost', 5000
-    @received_heartbeat = false
-    @clients            = {}
+    @coordinator = TCPSocket.new 'localhost', 5000
+    @heartbeats  = 0
+    @clients     = {}
+    @sockets     = [ @coordinator ]
+  end
+
+  def heartbeat
+    @coordinator.write 'S'
   end
 
   def received_heartbeat?
-    @received_heartbeat
+    @heartbeats > 0
   end
 
   def coordinator_heartbeat
@@ -33,7 +38,7 @@ class FakeServer < SimpleServer
         end
       end
     when 'H'
-      @received_heartbeat = true
+      @heartbeats += 1
     when 'L'
       session.write 'L'
       session.write UnsignedDatum[@clients.size]

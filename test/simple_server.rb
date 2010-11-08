@@ -1,9 +1,10 @@
 class SimpleServer < TCPServer
   def run
-    @sessions = []
+    @sessions ||= []
+    @sockets  ||= []
     @runner = Thread.start do
       while(session = accept)
-        # $stdout.puts 'User Connected!' # Debug
+        @sessions << session
         Thread.start(session) do |s|
           while(cmd = s.read 1)
             request_handler s, cmd
@@ -20,6 +21,7 @@ class SimpleServer < TCPServer
 
   def kill
     @sessions.each(&:close) if @sessions
+    @sockets.each(&:close)  if @sockets
     @runner.kill            if @runner
     close
   end
