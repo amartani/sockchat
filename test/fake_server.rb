@@ -2,7 +2,7 @@
 # and Server that runs on 6000 will be used on test
 
 class FakeServer < SimpleServer
-  attr_accessor :coordinator, :last_client_name, :clients
+  attr_accessor :coordinator, :clients
   def initialize(port = 6000)
     super 'localhost', port
     @coordinator = TCPSocket.new 'localhost', 5000
