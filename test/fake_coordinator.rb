@@ -4,8 +4,8 @@ class FakeCoordinator < SimpleServer
   attr_accessor :heartbeats
   def initialize
     super 'localhost', 5000
-    @received_heartbeat = false
-    @heartbeats         = 0
+    @heartbeats = 0
+    @sockets    = []
   end
 
   def received_heartbeat?

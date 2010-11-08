@@ -1,13 +1,11 @@
-DEBUG = true
+DEBUG_COORDINATOR = true
 
-PATH = File.dirname(__FILE__)
-require "#{PATH}/test/test_helper.rb"
-
-system "cd #{PATH} && ./compile_coordinator.sh" unless DEBUG
+require "#{File.dirname(__FILE__)}/test/test_helper.rb"
+system "cd #{PATH} && ./compile_coordinator.sh" unless DEBUG_COORDINATOR
 
 class TestCoordinator < TestSockchat
   def setup
-    @coordinator = DEBUG ? FakeCoordinator.new : RealCoordinator.popen('coordinator.out')
+    @coordinator = DEBUG_COORDINATOR ? FakeCoordinator.new : RealCoordinator.popen('coordinator.out')
     @server      = FakeServer.new 6000
     @client      = FakeClient.new
     @coordinator.run
