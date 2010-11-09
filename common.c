@@ -21,7 +21,7 @@ typedef struct string string;
 
 struct server_info {
   unsigned int ip[4];
-  unsigned short port;
+  int port;
 };
 typedef struct server_info server_info;
 
