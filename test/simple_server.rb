@@ -1,7 +1,6 @@
 class SimpleServer < TCPServer
   def run
     @sessions ||= []
-    @sockets  ||= []
     @runner = Thread.start do
       while(session = accept)
         @sessions << session
@@ -22,7 +21,6 @@ class SimpleServer < TCPServer
 
   def kill
     @sessions.each(&:close) if @sessions
-    # @sockets.each(&:close)  if @sockets
     @runner.kill            if @runner
     close
   end
