@@ -116,4 +116,3 @@ void cmd_list_servers(int sock){
 
 
 
-
