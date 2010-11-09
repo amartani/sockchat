@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <signal.h>
+#include <netdb.h>
 
 // ------- String --------
 struct string {
