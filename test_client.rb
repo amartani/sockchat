@@ -1,4 +1,4 @@
-DEBUG_CLIENT = false
+DEBUG_CLIENT = true
 
 require "#{File.dirname(__FILE__)}/test/test_helper.rb"
 system "cd #{PATH} && ./compile_client.sh" unless DEBUG_CLIENT
@@ -36,7 +36,7 @@ class TestClient < TestSockchat
       assert @server.clients.values.include?('Joao da Silva'), 'Client not connected on server'
     end
   end
-  
+
   def test_send_heartbeat
     wait_for_timeout(1.5) do
       @client.connect 'HeartBeater'
@@ -45,7 +45,7 @@ class TestClient < TestSockchat
       assert @server.received_heartbeat?, 'Heartbeat not received on server'
     end
   end
-  
+
   def test_ask_for_clients
     wait_for_timeout do
       @client.connect 'Ze do Caixao'
@@ -56,7 +56,7 @@ class TestClient < TestSockchat
       other_clients.values.each{ |c| c.logout }
     end
   end
-  
+
   def test_echo
     wait_for_timeout do
       @client.connect 'PingPong Tester'
@@ -64,7 +64,7 @@ class TestClient < TestSockchat
       assert_equal @client.echo(message), message, 'Message not echoed'
     end
   end
-  
+
   def test_client_sends_and_other_receives_messages
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
@@ -77,14 +77,14 @@ class TestClient < TestSockchat
       assert_equal other_client.messages.last, "Mula Sem Cabeca: #{message}"
     end
   end
-  
+
   def test_other_sends_and_client_receives_messages
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
       other_client = FakeClient.new
       other_client.connect 'Curupira'
       message = 'Achei, vou passar de calcanhar para voce!'
-  
+
       other_client.send_message message
       @client.listen
       assert_equal @client.messages.last, "Curupira: #{message}"

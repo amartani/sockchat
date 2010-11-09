@@ -38,8 +38,8 @@ class Datum < BitStruct
 end
 
 class ServerConnectionInfo < BitStruct
-  unsigned :ip,   32
-  unsigned :port, 16
+  unsigned :ip,   32, :endian => :little
+  unsigned :port, 16, :endian => :little
 
   def readable_ip=(string)
     self.ip = self.class.ip_to_value string

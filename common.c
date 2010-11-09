@@ -14,12 +14,16 @@
 
 // ------- String --------
 struct string {
-    unsigned int size;
-    char *str;
+  unsigned int size;
+  char *str;
 };
-
 typedef struct string string;
 
+struct server_info {
+  int ip[4];
+  unsigned short port;
+};
+typedef struct server_info server_info;
 
 // ------- Function Prototypes --------
 void error(char *msg);
