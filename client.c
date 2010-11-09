@@ -99,7 +99,7 @@ void cmd_list_servers(int sock){
   send(sock, "C", 1, 0);
   recv(sock, recv_data, sizeof(char), 0);
   bytes_recieved = recv(sock, servers, sizeof(server_info)*10, 0);
-  printf("(Ruby) IP: %u Porta: %u\n", servers[0].ip, servers[0].port);
+  printf("(Ruby) IP: %d.%d.%d.%d Porta: %u\n", servers[0].ip[0], servers[0].ip[1], servers[0].ip[2], servers[0].ip[3], servers[0].port);
   // recv_data[bytes_recieved] = '\0';
 
   command_check('C', recv_data[0]);

@@ -17,7 +17,7 @@ class FakeCoordinator < SimpleServer
     when 'C'
       session.write 'C'
       10.times do |n|
-        session.write ServerConnectionInfo.by_params('127.0.0.1', 5000+n)
+        session.write ServerConnectionInfo.by_params('127.0.0.1', 6000+n)
       end
     when 'S'
       @heartbeats += 1
