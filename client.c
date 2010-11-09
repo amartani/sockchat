@@ -44,7 +44,7 @@ int get_coordinator_socket(char *ip_address, int port){
   coordinator_address.sin_port = htons(port);
   coordinator_address.sin_addr = *((struct in_addr *)host->h_addr);
   bzero(&(coordinator_address.sin_zero),8);
-  if( connect(sock, (struct sockaddr *)&coordinator_address, sizeof(struct sockaddr)) < 0 ) error("ERROR connecting");
+  if( connect(sock, (struct sockaddr *)&coordinator_address, sizeof(coordinator_address)) < 0 ) error("ERROR connecting");
   return sock;
 }
 
