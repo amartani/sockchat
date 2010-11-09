@@ -5,7 +5,7 @@ class FakeServer < SimpleServer
   attr_accessor :coordinator, :clients, :heartbeats
   def initialize(port = 6000)
     super '127.0.0.1', port
-    @coordinator = TCPSocket.new 'localhost', port
+    @coordinator = TCPSocket.new '127.0.0.1', 5000
     @heartbeats  = 0
     @clients     = {}
     @sockets     = [ @coordinator ]

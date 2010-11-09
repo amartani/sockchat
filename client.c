@@ -9,6 +9,8 @@
 #define COORDINATOR_IP "127.0.0.1"
 #define COORDINATOR_PORT 5000
 
+server_info servers[SERVER_LIST_SIZE];
+
 // Porta: unsigned short (2 bytes)
 // IP:    unsigned int   (4 bytes)
 
@@ -46,8 +48,7 @@ int get_coordinator_socket(char *ip_address, int port){
   coordinator_address.sin_family = AF_INET;
   coordinator_address.sin_port = htons(port);
   coordinator_address.sin_addr = *((struct in_addr *)host->h_addr);
-  printf("(C) IP: %u.%u.%u.%u Porta: %u\n", (unsigned int) *(host->h_addr), (unsigned int) *(host->h_addr+1), (unsigned int) *(host->h_addr+2), (unsigned int) *(host->h_addr+3), (unsigned int) coordinator_address.sin_port);
-  printf("(C) IP: %u Porta: %u\n", (unsigned int) *(host->h_addr), (unsigned int) coordinator_address.sin_port);
+  printf("(C) IP: %u.%u.%u.%u Porta: %d\n", (unsigned int) *(host->h_addr), (unsigned int) *(host->h_addr+1), (unsigned int) *(host->h_addr+2), (unsigned int) *(host->h_addr+3), (int) coordinator_address.sin_port);
   bzero(&(coordinator_address.sin_zero),8);
   if( connect(sock, (struct sockaddr *)&coordinator_address, sizeof(coordinator_address)) < 0 ) error("ERROR connecting");
   return sock;
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
   cmd_list_servers(coordinator_socket);
 
   // choose_server(string_ip, &port);
-  printf("IP: %s Porta: %d\n", string_ip, port);
+  // printf("IP: %s Porta: %d\n", string_ip, port);
 
   close(coordinator_socket);
 
@@ -92,15 +93,16 @@ void command_check(char expected, char got){
 }
 
 void cmd_list_servers(int sock){
-  int bytes_recieved;
-  server_info servers[10];
+  int bytes_recieved, i;
   char send_data[1024], recv_data[1024];
 
   send(sock, "C", 1, 0);
   recv(sock, recv_data, sizeof(char), 0);
-  bytes_recieved = recv(sock, servers, sizeof(server_info)*10, 0);
-  printf("(Ruby) IP: %d.%d.%d.%d Porta: %d\n", servers[0].ip[0], servers[0].ip[1], servers[0].ip[2], servers[0].ip[3], servers[0].port);
-  // recv_data[bytes_recieved] = '\0';
+
+  for(i = 0; i < SERVER_LIST_SIZE; i++){
+    recv(sock, &(servers[i]), sizeof(server_info), 0);
+    printf("<%d> IP: %d.%d.%d.%d Porta: %d\n", i, servers[i].ip[0], servers[i].ip[1], servers[i].ip[2], servers[i].ip[3], servers[i].port);
+  }
 
   command_check('C', recv_data[0]);
 

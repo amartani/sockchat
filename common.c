@@ -12,6 +12,8 @@
 #include <signal.h>
 #include <netdb.h>
 
+#define SERVER_LIST_SIZE 10
+
 // ------- String --------
 struct string {
   unsigned int size;
