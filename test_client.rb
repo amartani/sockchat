@@ -7,7 +7,7 @@ class TestClient < TestSockchat
   def setup
     @coordinator = FakeCoordinator.new
     @server      = FakeServer.new 6000
-    @client      = DEBUG_CLIENT ? FakeClient.new : RealClient.popen('client.out')
+    @client      = DEBUG_CLIENT ? FakeClient.new : RealClient.popen('client')
     @coordinator.run
     @server.run
   end
