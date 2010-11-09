@@ -22,8 +22,7 @@ class RealClient < IO
   end
 
   def connect(name)
-    puts 'C'
-    puts name
+    puts 0
   end
 
   def send_message(message)
