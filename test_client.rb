@@ -25,7 +25,9 @@ class TestClient < TestSockchat
       @client.ask_for_servers
       assert_equal @client.servers.size, 10
       assert_equal @client.servers.first.readable_ip, '127.0.0.1'
+      assert_equal @client.servers[1].readable_ip, '127.0.0.1'
       assert_equal @client.servers.first.port, 6000
+      assert_equal @client.servers[1].port, 6001
     end
   end
 

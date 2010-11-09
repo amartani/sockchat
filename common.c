@@ -20,7 +20,7 @@ struct string {
 typedef struct string string;
 
 struct server_info {
-  int ip[4];
+  unsigned int ip[4];
   unsigned short port;
 };
 typedef struct server_info server_info;
