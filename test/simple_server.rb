@@ -6,7 +6,6 @@ class SimpleServer < TCPServer
       while(session = accept)
         @sessions << session
         # $stdout.puts 'User Connected'
-        session.puts 'MERDA'
         Thread.start(session) do |s|
           while(cmd = s.read 1)
             request_handler s, cmd
