@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
 
 // ------- String --------
 struct string {
@@ -23,8 +24,7 @@ typedef struct string string;
 void error(char *msg);
 string recv_string(int sock);
 void send_string(int sock, string str);
-void free_string(string str)
-
+void free_string(string str);
 
 // ------- Generic helper functions --------
 

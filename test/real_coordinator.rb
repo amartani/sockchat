@@ -20,6 +20,7 @@ class RealCoordinator < IO
 
   def kill
     @parsing_thread.kill if @parsing_thread
-    close
+    Process.kill 'QUIT', self.pid
+    close unless closed?
   end
 end
