@@ -42,7 +42,7 @@ class ServerConnectionInfo < BitStruct
   unsigned :ip2,  32, :endian => :little
   unsigned :ip3,  32, :endian => :little
   unsigned :ip4,  32, :endian => :little
-  unsigned :port, 16, :endian => :little
+  unsigned :port, 32, :endian => :little
 
   def readable_ip=(string)
     self.ip1, self.ip2, self.ip3, self.ip4 = string.split('.').map(&:to_i)
@@ -71,7 +71,7 @@ class ServerConnectionInfo < BitStruct
     instance.ip2  = data.to_s[4..7].bytes.first
     instance.ip3  = data.to_s[8..11].bytes.first
     instance.ip4  = data.to_s[12..15].bytes.first
-    instance.port = data.to_s[16..17].reverse.bytes.inject(0){ |s,x| s = s*256 + x }
+    instance.port = data.to_s[16..19].reverse.bytes.inject(0){ |s,x| s = s*256 + x }
     instance
   end
 

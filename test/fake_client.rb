@@ -11,7 +11,7 @@ class FakeClient
     @coordinator_socket.write 'C'
     match_command 'C', @coordinator_socket.read(1)
     @servers = 10.times.map do
-      ServerConnectionInfo.by_data @coordinator_socket.read(18)
+      ServerConnectionInfo.by_data @coordinator_socket.read(20)
     end
     @coordinator_socket.close
   end
