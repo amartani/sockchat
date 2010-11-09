@@ -1,6 +1,6 @@
 class RealServer < IO
   attr_accessor :coordinator, :clients
-  def popen(cmd)
+  def self.popen(cmd)
     super "./#{PATH}/#{cmd}", 'r'
   end
 

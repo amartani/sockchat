@@ -11,9 +11,9 @@
 class RealClient < IO
   attr_accessor :servers, :messages
 
-  def popen(cmd)
+  def self.popen(cmd)
     @messages = []
-    super "./#{PATH}/#{cmd}", 'r+'
+    super "#{PATH}/./#{cmd}", 'r+'
   end
 
   def ask_for_servers

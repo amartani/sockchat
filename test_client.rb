@@ -1,4 +1,4 @@
-DEBUG_CLIENT = true
+DEBUG_CLIENT = false
 
 require "#{File.dirname(__FILE__)}/test/test_helper.rb"
 system "cd #{PATH} && ./compile_client.sh" unless DEBUG_CLIENT
@@ -36,7 +36,7 @@ class TestClient < TestSockchat
       assert @server.clients.values.include?('Joao da Silva'), 'Client not connected on server'
     end
   end
-
+  
   def test_send_heartbeat
     wait_for_timeout(1.5) do
       @client.connect 'HeartBeater'

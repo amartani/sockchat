@@ -38,12 +38,13 @@ int get_coordinator_socket(char *ip_address, int port){
   sock = socket(AF_INET, SOCK_STREAM, 0);
   if(sock < 0) error("ERROR opening coordinator socket");
 
-  bzero((char *) &coordinator_address, sizeof(coordinator_address));
+  host = gethostbyname(ip_address);
+
   coordinator_address.sin_family = AF_INET;
   coordinator_address.sin_port = htons(port);
-  host = gethostbyname(ip_address);
-  bcopy((char *)host->h_addr, (char *)&coordinator_address.sin_addr.s_addr, host->h_length);
-  if ( connect(sock, (struct sockaddr *)&coordinator_address, sizeof(coordinator_address)) < 0 ) error("ERROR connecting");
+  coordinator_address.sin_addr = *((struct in_addr *)host->h_addr);
+  bzero(&(coordinator_address.sin_zero),8);
+  if( connect(sock, (struct sockaddr *)&coordinator_address, sizeof(struct sockaddr)) < 0 ) error("ERROR connecting");
   return sock;
 }
 
