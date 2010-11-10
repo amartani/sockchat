@@ -10,3 +10,11 @@ test_files = [ 'simple_server.rb', 'fake_client.rb', 'fake_server.rb', 'fake_coo
 test_files.each do |file|
   require "#{PATH}/test/#{file}"
 end
+
+def setup
+  coord, server, client = FakeCoordinator.new, FakeServer.new, FakeClient.new
+  coord.run
+  server.run
+  client.connect 'Stupid Client'
+  [coord, server, client]
+end

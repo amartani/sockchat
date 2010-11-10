@@ -1,5 +1,5 @@
 class FakeClient
-  attr_accessor :coordinator_socket, :server_socket, :servers, :messages
+  attr_accessor :coordinator_socket, :server_socket, :servers, :messages, :echoed, :clients
 
   def initialize
     @servers  = []
@@ -45,7 +45,7 @@ class FakeClient
     @server_socket.write 'E'
     @server_socket.write sent_message
     match_command 'E', @server_socket.read(1)
-    @server_socket.read sent_message.datum_size
+    @echoed = Datum.get_from(@server_socket).data
   end
 
   def listen

@@ -26,14 +26,13 @@ class FakeServer < SimpleServer
   def request_handler(session, cmd)
     case cmd
     when 'C'
-      $stdout.puts 'Connection'
       client_name = Datum.get_from(session).data
       @clients ||= {}
       @clients[session] = client_name
     when 'M'
       message = Datum.string "#{@clients[session]}: #{Datum.get_from(session).data}"
       @clients.each do |s, name|
-        if s != session
+        if !s.closed? && s != session
           s.write 'M'
           s.write message
         end
@@ -47,7 +46,7 @@ class FakeServer < SimpleServer
         session.write Datum.string(name)
       end
     when 'E'
-      message = Datum.get_from(session).data
+      message = Datum.get_from(session)
       session.write 'E'
       session.write message
     else

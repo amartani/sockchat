@@ -9,7 +9,7 @@
 #   puts    => escreve string no stdin do servidor (coloca \n no final)
 
 class RealClient < IO
-  attr_accessor :servers, :messages
+  attr_accessor :servers, :messages, :echoed
 
   def puts(*args)
     super
@@ -51,14 +51,29 @@ class RealClient < IO
     puts 'E'
     # Forma: "ECHO: #{message}"
     puts message
-    gets.chomp[6..-1]
   end
 
   def listen
-    @messages << gets.chomp
+    relevant_reading = false
+    until relevant_reading
+      case gets
+      when /Message/
+        @messages << gets.chomp
+        relevant_reading = true
+      when /Clients\s\(\d+\)/
+        @clients = $~[1].to_i.times.map{ gets.chomp }
+        relevant_reading = true
+      when /Echoed/
+        @echoed = gets.chomp
+        relevant_reading = true
+      else
+        relevant_reading = false
+      end
+    end
   end
 
   def logout
+    Process.kill 'QUIT', self.pid
     close unless closed?
   end
 

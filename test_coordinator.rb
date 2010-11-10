@@ -5,7 +5,7 @@ system "cd #{PATH} && ./compile_coordinator.sh" unless DEBUG_COORDINATOR
 
 class TestCoordinator < TestSockchat
   def setup
-    @coordinator = DEBUG_COORDINATOR ? FakeCoordinator.new : RealCoordinator.popen('coordinator.out')
+    @coordinator = DEBUG_COORDINATOR ? FakeCoordinator.new : RealCoordinator.popen('coordinator')
     @server      = FakeServer.new 6000
     @client      = FakeClient.new
     @coordinator.run
