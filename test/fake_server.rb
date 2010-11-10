@@ -26,6 +26,7 @@ class FakeServer < SimpleServer
   def request_handler(session, cmd)
     case cmd
     when 'C'
+      $stdout.puts 'Connection'
       client_name = Datum.get_from(session).data
       @clients ||= {}
       @clients[session] = client_name

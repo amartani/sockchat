@@ -1,5 +1,5 @@
 class IntDatum < BitStruct
-  signed :value, 32
+  signed :value, 32, :endian => :little
 
   def self.[](value)
     instance       = self.new
@@ -9,7 +9,7 @@ class IntDatum < BitStruct
 end
 
 class UnsignedDatum < BitStruct
-  unsigned :value, 32
+  unsigned :value, 32, :endian => :little
 
   def self.[](value)
     instance       = self.new
@@ -19,8 +19,8 @@ class UnsignedDatum < BitStruct
 end
 
 class Datum < BitStruct
-  signed :datum_size, 32
-  rest   :data
+  signed :datum_size, 32, :endian => :little
+  rest   :data, :endian => :little
 
   def self.get_from(resource)
     instance            = self.new
