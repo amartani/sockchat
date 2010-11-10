@@ -9,10 +9,32 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
+#include <netdb.h>
+
+#define SERVER_LIST_SIZE 10
+
+// ------- String --------
+struct string {
+  unsigned int size;
+  char *str;
+};
+typedef struct string string;
+
+struct server_info {
+  unsigned int ip[4];
+  int port;
+};
+typedef struct server_info server_info;
+
+// ------- Function Prototypes --------
+void error(char *msg);
+string string_create(char *);
+string recv_string(int sock);
+void send_string(int sock, string str);
+void free_string(string str);
 
 // ------- Generic helper functions --------
-
-void error(char *msg);
 
 void error(char *msg)
 {
@@ -20,17 +42,15 @@ void error(char *msg)
     exit(1);
 }
 
-
-// ------- String --------
-
-struct string {
-    unsigned int size;
-    char *str;
-};
-
-typedef struct string string;
-
 // helper function to send and receive string structs
+
+string string_create(char *char_vector){
+  string str;
+  str.size = strlen(char_vector);
+  str.str = (char*) malloc(str.size*sizeof(char));
+  strcpy(str.str, char_vector);
+  return str;
+}
 
 string recv_string(int sock)
 {
