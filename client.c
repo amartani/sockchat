@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
   coordinator_socket = get_socket(string_ip, port);
   cmd_list_servers(coordinator_socket);
 
+  close(coordinator_socket);
+
   choose_server(string_ip, &port);
   server_socket = get_socket(string_ip, port);
   cmd_connect(server_socket);
@@ -89,8 +91,9 @@ int main(int argc, char *argv[])
     if( handle_user(code, server_socket) ) break;
   }
 
+  pthread_cancel(listening_thread);
+  pthread_cancel(beating_thread);
   close(server_socket);
-  close(coordinator_socket);
 
   return 0;
 }
