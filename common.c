@@ -46,6 +46,7 @@ void error(char *msg)
 
 string string_create(char *char_vector){
   string str;
+  char_vector[strlen(char_vector)-1] = '\0';
   str.size = strlen(char_vector);
   str.str = (char*) malloc(str.size*sizeof(char));
   strcpy(str.str, char_vector);

@@ -82,6 +82,6 @@ end
 
 class String
   def to_unsigned
-    self.bytes.map(&:to_i).inject(0){ |s,x| s = s*256 + x }
+    self.reverse.bytes.map(&:to_i).inject(0){ |s,x| s = s*256 + x }
   end
 end
