@@ -34,15 +34,26 @@ def connect_socket():
         except:
             retry -= 1
             if retry == 0:
-                assert False, "Could not connect socket"
+                raise
             time.sleep(1)
     sock.settimeout(2.0)
     return sock
 
+def start_server():
+    server = None
+    retry = 10
+    while retry > 0:
+        server = subprocess.Popen([PROGRAM, str(PORT)])
+        time.sleep(0.5)
+        if server.poll() == None:
+            return server
+        retry -= 1
+    raise Exception("Nao deu pra subir o server")
+
 class TestServer():
 
     def setup_method(self, method):
-        self.server_process = subprocess.Popen([PROGRAM, str(PORT)], stdout=sys.stderr, stderr=sys.stderr)
+        self.server_process = start_server()
         self.socket = connect_socket()
 
     def teardown_method(self, method):
@@ -102,7 +113,7 @@ class TestServer():
 class TestServerWithMultipleClients():
 
     def setup_method(self, method):
-        self.server_process = subprocess.Popen([PROGRAM, str(PORT)])
+        self.server_process = start_server()
         self.sockets = list(connect_socket() for i in range(10))
 
     def teardown_method(self, method):
@@ -123,8 +134,10 @@ class TestServerWithMultipleClients():
             number += 1
         number = 0
         for sock in self.sockets:
-            assert "E" == sock.recv(1)
-            assert ("Test number %d." % number) == recv_string(sock)
+            cmd = sock.recv(1)
+            assert "E" == cmd
+            str_recv = recv_string(sock)
+            assert ("Test number %d." % number) == str_recv
             number += 1
 
     def test_multiple_echo(self):
@@ -144,7 +157,8 @@ class TestServerWithMultipleClients():
         time.sleep(1.0)
         for sock in self.sockets:
             sock.send("L")
-            assert "L" == sock.recv(1)
+            cmd = sock.recv(1)
+            assert "L" == cmd
             users = recv_int(sock)
             assert 10 == users
             names = list()
@@ -163,7 +177,8 @@ class TestServerWithMultipleClients():
         usernames = list("client %d" % i for i in range(9))
         for sock in self.sockets:
             sock.send("L")
-            assert "L" == sock.recv(1)
+            cmd = sock.recv(1)
+            assert "L" == cmd
             users = recv_int(sock)
             assert 9 == users
             names = list()
