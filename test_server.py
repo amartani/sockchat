@@ -140,15 +140,13 @@ class TestServerWithMultipleClients():
 
     def test_list(self):
         usernames = list("client %d" % i for i in range(10))
-        for sock, username in zip(self.sockets, usernames):
-            # Connect
-            sock.send("C")
-            send_string(sock, username)
+        self.test_usernames()
         time.sleep(1.0)
         for sock in self.sockets:
             sock.send("L")
             assert "L" == sock.recv(1)
-            assert 10 == recv_int(sock)
+            users = recv_int(sock)
+            assert 10 == users
             names = list()
             for i in range(10):
                 name = recv_string(sock)
@@ -159,14 +157,15 @@ class TestServerWithMultipleClients():
     def test_disconnection(self):
         self.test_usernames()
         time.sleep(1.0)
-        #disconnected = self.sockets.pop(-1)
-        #disconnected.close()
-        #time.sleep(1.0)
+        disconnected = self.sockets.pop(-1)
+        disconnected.close()
+        time.sleep(5.0)
         usernames = list("client %d" % i for i in range(9))
         for sock in self.sockets:
             sock.send("L")
             assert "L" == sock.recv(1)
-            assert 9 == recv_int(sock)
+            users = recv_int(sock)
+            assert 9 == users
             names = list()
             for i in range(9):
                 name = recv_string(sock)

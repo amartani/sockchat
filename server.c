@@ -8,6 +8,7 @@
  */
 
 #include "common.c"
+#include <errno.h>
 
 // function prototypes
 
@@ -40,7 +41,9 @@ void send_string(int sock, string str);
 
 void *do_chld(void *arg);
 void select_command(int sock, client_node_t *client_node);
+void set_client_socket_options(int sock);
 void client_handle(int sock);
+void disconnect_user(client_node_t *client_node);
 
 // ---- commands ----
 
@@ -151,7 +154,19 @@ void *do_chld(void *arg)
     int sock = *((int*)arg);
     free(arg);
 
+    set_client_socket_options(sock);
+
     client_handle(sock);
+}
+
+// Set common options for client sockets
+void set_client_socket_options(int sock)
+{
+    struct timeval tv;
+
+    // Set timeout
+    tv.tv_usec = 10;  /* 100 usec Timeout */
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 }
 
 // Handle a connection with a client
@@ -171,8 +186,8 @@ void select_command(int sock, client_node_t *client_node)
     int n;
     char command;
 
-    n = read(sock, &command, sizeof(command));
-    if (n < 0) error("ERROR reading from socket");
+    n = recv(sock, &command, sizeof(command), 0);
+    if (n < 0) goto SOCKET_ERROR;
 
     switch (command) {
     case 'C':
@@ -188,6 +203,39 @@ void select_command(int sock, client_node_t *client_node)
         cmd_unknown(sock);
         break;
     }
+
+    return;
+
+SOCKET_ERROR:
+    printf("SOCKET ERROR %d\n", errno);
+    fflush(stdout);
+    switch(errno) {
+        case ECONNRESET:
+            disconnect_user(client_node);
+            break;
+    }
+}
+
+// Disconnect user
+void disconnect_user(client_node_t *client_node)
+{
+    client_node_t *next, *prev;
+
+    // Lock client list for writer
+    pthread_rwlock_wrlock(clients_list->lock);
+    
+    clients_list->size --;
+
+    next = client_node->next;
+    prev = client_node->prev;
+    prev->next = next;
+    next->prev = prev;
+
+    free_string(client_node->nick);
+    free(client_node);
+
+    // Unlock client list
+    pthread_rwlock_unlock(clients_list->lock);
 }
 
 // commands
