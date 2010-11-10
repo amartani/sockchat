@@ -11,18 +11,23 @@
 class RealClient < IO
   attr_accessor :servers, :messages
 
+  def puts(*args)
+    super
+    flush
+  end
+
   def self.popen(cmd)
     @messages = []
     super "#{PATH}/./#{cmd}", 'r+'
   end
 
   def ask_for_servers
-    puts 'A'
     @servers = get_servers
   end
 
-  def connect(name)
-    puts 0
+  def connect(name, server = 0)
+    puts server
+    puts name
   end
 
   def send_message(message)
@@ -53,10 +58,15 @@ class RealClient < IO
     @messages << gets.chomp
   end
 
+  def logout
+    close unless closed?
+  end
+
   protected
   def get_servers
     10.times.map do
-      line = gets # Forma: "IP: 127.0.0.1 Porta: 6000\n"
+      # Forma: "IP: 127.0.0.1 Porta: 6000\n"
+      line = gets
       ip   = line.match(/\d+\.\d+\.\d+\.\d+/)[0]
       port = line.match(/Porta\:\s+(\d+)/)[1].to_i
       ServerConnectionInfo.by_params ip, port

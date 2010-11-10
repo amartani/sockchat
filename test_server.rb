@@ -10,11 +10,13 @@ class TestServer < TestSockchat
     @client      = FakeClient.new
     @coordinator.run
     @server.run
+    @client.ask_for_servers
   end
 
   def generate_other_clients
     clients = ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
       hash[name] = FakeClient.new
+      hash[name].ask_for_servers
       hash[name].connect name
       hash
     end

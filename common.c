@@ -29,6 +29,7 @@ typedef struct server_info server_info;
 
 // ------- Function Prototypes --------
 void error(char *msg);
+string string_create(char *);
 string recv_string(int sock);
 void send_string(int sock, string str);
 void free_string(string str);
@@ -42,6 +43,14 @@ void error(char *msg)
 }
 
 // helper function to send and receive string structs
+
+string string_create(char *char_vector){
+  string str;
+  str.size = strlen(char_vector);
+  str.str = (char*) malloc(str.size*sizeof(char));
+  strcpy(str.str, char_vector);
+  return str;
+}
 
 string recv_string(int sock)
 {

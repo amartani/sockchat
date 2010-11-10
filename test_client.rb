@@ -1,4 +1,4 @@
-DEBUG_CLIENT = true
+DEBUG_CLIENT = false
 
 require "#{File.dirname(__FILE__)}/test/test_helper.rb"
 system "cd #{PATH} && ./compile_client.sh" unless DEBUG_CLIENT
@@ -10,11 +10,13 @@ class TestClient < TestSockchat
     @client      = DEBUG_CLIENT ? FakeClient.new : RealClient.popen('client')
     @coordinator.run
     @server.run
+    @client.ask_for_servers
   end
 
   def generate_other_clients
     clients = ['Joao', 'Maria', 'Jose'].inject({}) do |hash, name|
       hash[name] = FakeClient.new
+      hash[name].ask_for_servers
       hash[name].connect name
       hash
     end
@@ -22,7 +24,6 @@ class TestClient < TestSockchat
 
   def test_ask_for_servers_to_coordinator
     wait_for_timeout do
-      @client.ask_for_servers
       assert_equal @client.servers.size, 10
       @client.servers.each_with_index do |server, index|
         assert_equal server.readable_ip, '127.0.0.1'
@@ -35,6 +36,7 @@ class TestClient < TestSockchat
     wait_for_timeout(1.5) do
       @client.connect 'Joao da Silva'
       sleep 0.5
+      assert !@server.clients.empty?, 'Any connected client'
       assert @server.clients.values.include?('Joao da Silva'), 'Client not connected on server'
     end
   end
@@ -71,6 +73,7 @@ class TestClient < TestSockchat
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
       other_client = FakeClient.new
+      other_client.ask_for_servers
       other_client.connect 'Curupira'
       message = 'Voce viu minha cabeca? Acho que deixei la atras!'
   
@@ -84,6 +87,7 @@ class TestClient < TestSockchat
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
       other_client = FakeClient.new
+      other_client.ask_for_servers
       other_client.connect 'Curupira'
       message = 'Achei, vou passar de calcanhar para voce!'
 
