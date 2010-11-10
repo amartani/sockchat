@@ -1,4 +1,4 @@
-DEBUG_CLIENT = true
+DEBUG_CLIENT = false
 
 require "#{File.dirname(__FILE__)}/test/test_helper.rb"
 system "cd #{PATH} && ./compile_client.sh" unless DEBUG_CLIENT

@@ -11,7 +11,9 @@
 #define COORDINATOR_IP "127.0.0.1"
 #define COORDINATOR_PORT 5000
 
+// ------- Global Variables --------
 server_info servers[SERVER_LIST_SIZE];
+
 
 // Porta: unsigned short (2 bytes)
 // IP:    unsigned int   (4 bytes)
@@ -21,7 +23,7 @@ server_info servers[SERVER_LIST_SIZE];
 // string string_create(char *);
 // string recv_string(int sock);
 // void send_string(int sock, string str);
-// void free_string(string str)
+// void free_string(string str);
 
 // ------- Commands Prototypes --------
 void cmd_list_servers(int sock);
@@ -142,6 +144,7 @@ void server_sent_message(int sock){
   str = recv_string(sock);
   printf("Message:\n%s\n", str.str);
   fflush(stdout);
+  free_string(str);
 }
 
 void server_listed_users(int sock){
@@ -156,6 +159,7 @@ void server_listed_users(int sock){
     printf("%s\n", str.str);
   }
   fflush(stdout);
+  free_string(str);
 }
 
 void server_echoed(int sock){
@@ -163,6 +167,7 @@ void server_echoed(int sock){
   str = recv_string(sock);
   printf("Echoed:\n%s\n", str.str);
   fflush(stdout);
+  free_string(str);
 }
 
 // ------- Helper Functions --------
@@ -189,6 +194,7 @@ int handle_user(char code, int sock){
 
 int handle_server(char code, int sock){
   // printf("CODE: %c, %d\n", code, (int) code);
+  FILE * log;
   switch(code){
     case 'M':
       server_sent_message(sock); break;
@@ -197,6 +203,9 @@ int handle_server(char code, int sock){
     case 'E':
       server_echoed(sock); break;
     default:
+      log = fopen("log.txt", "w+");
+      fprintf(log, "Problem: code => %c, socket => %d", code, sock);
+      fclose(log);
       return 1;
   }
   return 0;
@@ -224,10 +233,14 @@ void *heart_beating(void *arg){
 
 void send_string_command(int sock, char cmd){
   char str[100];
+  string sized_str;
+
   fgets(str, 100, stdin);
   while(strcmp(str, "\n") == 0) fgets(str, 100, stdin);
   send(sock, &cmd, 1, 0);
-  send_string(sock, string_create(str));
+  sized_str = string_create(str);
+  send_string(sock, sized_str);
+  free_string(sized_str);
 }
 
 int get_socket(char *ip_address, int port){

@@ -17,7 +17,6 @@ class RealClient < IO
   end
 
   def self.popen(cmd)
-    @messages = []
     super "#{PATH}/./#{cmd}", 'r+'
   end
 
@@ -42,15 +41,19 @@ class RealClient < IO
   def ask_for_clients
     puts 'L'
     # Forma: "2\nFulano\nSicrano"
-    read(1).to_i.times.map do
-      gets.chomp
-    end
+    # read(1).to_i.times.map do
+    #   gets.chomp
+    # end
+    listen
+    @clients
   end
 
   def echo(message)
     puts 'E'
     # Forma: "ECHO: #{message}"
     puts message
+    listen
+    @echoed
   end
 
   def listen
@@ -58,6 +61,7 @@ class RealClient < IO
     until relevant_reading
       case gets
       when /Message/
+        @messages ||= []
         @messages << gets.chomp
         relevant_reading = true
       when /Clients\s\(\d+\)/
@@ -73,7 +77,7 @@ class RealClient < IO
   end
 
   def logout
-    Process.kill 'QUIT', self.pid
+    Process.kill 'TERM', self.pid
     close unless closed?
   end
 
