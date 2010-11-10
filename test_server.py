@@ -24,30 +24,16 @@ def recv_int(sock):
     return num
 
 def connect_socket():
-    sock = None
-    retry = 10
-    while retry:
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('localhost', PORT))
-            break
-        except:
-            retry -= 1
-            if retry == 0:
-                raise
-            time.sleep(1)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('localhost', PORT))
     sock.settimeout(2.0)
     return sock
 
 def start_server():
-    server = None
-    retry = 10
-    while retry > 0:
-        server = subprocess.Popen([PROGRAM, str(PORT)])
-        time.sleep(0.5)
-        if server.poll() == None:
-            return server
-        retry -= 1
+    server = subprocess.Popen([PROGRAM, str(PORT)])
+    time.sleep(0.5)
+    if server.poll() == None:
+        return server
     raise Exception("Nao deu pra subir o server")
 
 class TestServer():

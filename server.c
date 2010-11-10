@@ -191,7 +191,11 @@ void select_command(int sock, client_node_t *client_node)
     char command;
 
     n = recv(sock, &command, sizeof(command), 0);
-    if (n < 0) socket_error_handler();
+    if (n < 0)
+    {
+        socket_error_handler();
+        return;
+    }
 
     switch (command) {
     case 'C':
