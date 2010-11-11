@@ -44,6 +44,7 @@ void select_command(int sock, client_node_t *client_node);
 void set_client_socket_options(int sock);
 void client_handle(int sock);
 void disconnect_user(client_node_t *client_node);
+void socket_error_handler();
 
 // ---- commands ----
 
@@ -117,6 +118,9 @@ int main(int argc, char *argv[])
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket");
+    int optval = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
     bzero((char *) &serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
@@ -187,7 +191,11 @@ void select_command(int sock, client_node_t *client_node)
     char command;
 
     n = recv(sock, &command, sizeof(command), 0);
-    if (n < 0) goto SOCKET_ERROR;
+    if (n < 0)
+    {
+        socket_error_handler();
+        return;
+    }
 
     switch (command) {
     case 'C':
@@ -206,12 +214,17 @@ void select_command(int sock, client_node_t *client_node)
 
     return;
 
-SOCKET_ERROR:
-    printf("SOCKET ERROR %d\n", errno);
-    fflush(stdout);
-    switch(errno) {
-        case ECONNRESET:
-            disconnect_user(client_node);
+}
+
+void socket_error_handler()
+{
+    int serr = errno;
+    switch (errno)
+    {
+        case EAGAIN:
+            break;
+        default:
+            perror("Socket error");
             break;
     }
 }
