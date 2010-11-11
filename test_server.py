@@ -121,7 +121,7 @@ class TestServerWithMultipleClients():
         number = 0
         for sock in self.sockets:
             cmd = sock.recv(1)
-            assert "E" == cmd
+            assert "E" == cmd, number
             str_recv = recv_string(sock)
             assert ("Test number %d." % number) == str_recv
             number += 1
@@ -159,7 +159,10 @@ class TestServerWithMultipleClients():
         time.sleep(1.0)
         disconnected = self.sockets.pop(-1)
         disconnected.close()
-        time.sleep(5.0)
+        for i in range(2):
+            for sock in self.sockets:
+                sock.send("H")
+            time.sleep(4.0)
         usernames = list("client %d" % i for i in range(9))
         for sock in self.sockets:
             sock.send("L")

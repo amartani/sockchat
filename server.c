@@ -24,12 +24,12 @@ struct client_node {
     int sock;
     string nick;
     client_node_t *prev, *next;
+    pthread_t thread;
+    pthread_t watchdog;
 };
 
 struct clients_list {
     pthread_rwlock_t *lock;
-    pthread_t thread;
-    pthread_t watchdog;
     client_node_t *first, *last;
     int size;
 };
@@ -49,13 +49,16 @@ void client_handle(int sock);
 void disconnect_user(client_node_t *client_node);
 void socket_error_handler();
 void set_listening_socket_options(int sockfd);
-void watchdog(void *arg);
+void set_watchdog(client_node_t *client_node);
+void *watchdog(void *arg);
+void thread_cancel_if_not_self(pthread_t thread);
 
 // ---- commands ----
 
 void cmd_set_nick(int sock, client_node_t *client_node);
 void cmd_list(int sock);
 void cmd_echo(int sock);
+void cmd_heartbeat(client_node_t *client_node);
 void cmd_unknown(int sock);
 
 // -------- Functions -----------
@@ -80,12 +83,14 @@ void initialize_clients_list()
 client_node_t *insert_client(int sock)
 {
     client_node_t* new_client = (client_node_t*) malloc(sizeof(client_node_t));
-    new_client->thread = pthread_self();
     new_client->sock = sock;
     new_client->nick.size = 0;
     new_client->nick.str = NULL;
     new_client->prev = NULL;
     new_client->next = NULL;
+
+    new_client->thread = pthread_self();
+    new_client->watchdog = 0;
 
     // Lock client list for writer
     pthread_rwlock_wrlock(clients_list->lock);
@@ -166,20 +171,6 @@ void set_listening_socket_options(int sockfd)
     optval = 1;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-    // Set TCP Keep-alive
-    setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
-
-    // 30 sec before sending keep-alive
-    optval = 30;
-    setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, &optval, sizeof(optval));
-
-    // 10 sec between keep-alive probes
-    optval = 10;
-    setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
-
-    // 6 keep-alive missing before disconnect
-    optval = 6;
-    setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
 }
 
 // New threads calls this
@@ -202,7 +193,6 @@ void set_client_socket_options(int sock)
     tv.tv_usec = 10;  /* 100 usec Timeout */
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 
-    set_listening_socket_options(sock);
 }
 
 // Handle a connection with a client
@@ -211,6 +201,7 @@ void client_handle(int sock)
 {
     client_node_t *client_node = insert_client(sock);
 
+    set_watchdog(client_node);
     while (1) {
         select_command(sock, client_node);
     }
@@ -238,6 +229,9 @@ void select_command(int sock, client_node_t *client_node)
         break;
     case 'E':
         cmd_echo(sock);
+        break;
+    case 'H':
+        cmd_heartbeat(client_node);
         break;
     default:
         cmd_unknown(sock);
@@ -268,7 +262,12 @@ void disconnect_user(client_node_t *client_node)
 
     // Lock client list for writer
     pthread_rwlock_wrlock(clients_list->lock);
+
+    // Kill threads
+    thread_cancel_if_not_self(client_node->thread);
+    thread_cancel_if_not_self(client_node->watchdog);
     
+    // Remove node from global list
     clients_list->size --;
 
     next = client_node->next;
@@ -339,11 +338,45 @@ void cmd_echo(int sock)
     send_string(sock, str);
 }
 
+void cmd_heartbeat(client_node_t *client_node)
+{
+    set_watchdog(client_node);
+}
+
 void cmd_unknown(int sock)
 {
     int n;
 
     n = write(sock,"Desconhecido",12);
     if (n < 0) error("ERROR writing to socket");
+}
+
+void set_watchdog(client_node_t *client_node)
+{
+    if (client_node->watchdog) {
+        pthread_cancel(client_node->watchdog);
+    }
+
+    pthread_create(&client_node->watchdog, NULL, watchdog, (void*) client_node);
+}
+
+void *watchdog(void *arg)
+{
+    client_node_t* client_node = (client_node_t*) arg;
+
+//    printf("Set watchdog for %s.\n", client_node->nick.str);
+//    fflush(stdout);
+    sleep(5);
+
+    printf("Disconnecting %s.\n", client_node->nick.str);
+    fflush(stdout);
+    disconnect_user(arg);
+}
+
+void thread_cancel_if_not_self(pthread_t thread)
+{
+    if (thread == 0) return;
+    if (thread == pthread_self()) return;
+    pthread_cancel(thread);
 }
 
