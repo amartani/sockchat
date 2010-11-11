@@ -9,6 +9,7 @@
 
 #include "common.c"
 #include <errno.h>
+#include <netinet/tcp.h>
 
 // function prototypes
 
@@ -27,6 +28,8 @@ struct client_node {
 
 struct clients_list {
     pthread_rwlock_t *lock;
+    pthread_t thread;
+    pthread_t watchdog;
     client_node_t *first, *last;
     int size;
 };
@@ -45,6 +48,8 @@ void set_client_socket_options(int sock);
 void client_handle(int sock);
 void disconnect_user(client_node_t *client_node);
 void socket_error_handler();
+void set_listening_socket_options(int sockfd);
+void watchdog(void *arg);
 
 // ---- commands ----
 
@@ -75,6 +80,7 @@ void initialize_clients_list()
 client_node_t *insert_client(int sock)
 {
     client_node_t* new_client = (client_node_t*) malloc(sizeof(client_node_t));
+    new_client->thread = pthread_self();
     new_client->sock = sock;
     new_client->nick.size = 0;
     new_client->nick.str = NULL;
@@ -118,8 +124,8 @@ int main(int argc, char *argv[])
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket");
-    int optval = 1;
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+    set_listening_socket_options(sockfd);
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
@@ -152,6 +158,30 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+void set_listening_socket_options(int sockfd)
+{
+    int optval;
+
+    // Avoid address in use errors
+    optval = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+    // Set TCP Keep-alive
+    setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval));
+
+    // 30 sec before sending keep-alive
+    optval = 30;
+    setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, &optval, sizeof(optval));
+
+    // 10 sec between keep-alive probes
+    optval = 10;
+    setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
+
+    // 6 keep-alive missing before disconnect
+    optval = 6;
+    setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, &optval, sizeof(optval));
+}
+
 // New threads calls this
 void *do_chld(void *arg)
 {
@@ -171,6 +201,8 @@ void set_client_socket_options(int sock)
     // Set timeout
     tv.tv_usec = 10;  /* 100 usec Timeout */
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+
+    set_listening_socket_options(sock);
 }
 
 // Handle a connection with a client
