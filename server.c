@@ -59,6 +59,7 @@ void cmd_set_nick(int sock, client_node_t *client_node);
 void cmd_list(int sock);
 void cmd_echo(int sock);
 void cmd_heartbeat(client_node_t *client_node);
+void cmd_quit(client_node_t *client_node);
 void cmd_unknown(int sock);
 
 // -------- Functions -----------
@@ -190,7 +191,7 @@ void set_client_socket_options(int sock)
     struct timeval tv;
 
     // Set timeout
-    tv.tv_usec = 10;  /* 100 usec Timeout */
+    tv.tv_usec = 100;  /* 100 usec Timeout */
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 
 }
@@ -233,6 +234,9 @@ void select_command(int sock, client_node_t *client_node)
     case 'H':
         cmd_heartbeat(client_node);
         break;
+    case 'Q':
+        cmd_quit(client_node);
+        break;
     default:
         cmd_unknown(sock);
         break;
@@ -260,6 +264,9 @@ void disconnect_user(client_node_t *client_node)
 {
     client_node_t *next, *prev;
 
+    printf("Disconnecting %s.\n", client_node->nick.str);
+    fflush(stdout);
+
     // Lock client list for writer
     pthread_rwlock_wrlock(clients_list->lock);
 
@@ -275,6 +282,7 @@ void disconnect_user(client_node_t *client_node)
     prev->next = next;
     next->prev = prev;
 
+    // Free memory
     free_string(client_node->nick);
     free(client_node);
 
@@ -336,11 +344,21 @@ void cmd_echo(int sock)
     if (res < 0) error("ERROR writing to socket");
 
     send_string(sock, str);
+
+    free_string(str);
 }
 
 void cmd_heartbeat(client_node_t *client_node)
 {
     set_watchdog(client_node);
+}
+
+void cmd_quit(client_node_t *client_node)
+{
+    thread_cancel_if_not_self(client_node->watchdog);
+    thread_cancel_if_not_self(client_node->thread);
+    disconnect_user(client_node);
+    pthread_exit(NULL);
 }
 
 void cmd_unknown(int sock)
@@ -364,12 +382,8 @@ void *watchdog(void *arg)
 {
     client_node_t* client_node = (client_node_t*) arg;
 
-//    printf("Set watchdog for %s.\n", client_node->nick.str);
-//    fflush(stdout);
     sleep(5);
 
-    printf("Disconnecting %s.\n", client_node->nick.str);
-    fflush(stdout);
     disconnect_user(arg);
 }
 
