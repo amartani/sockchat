@@ -49,7 +49,7 @@ class TestClient < TestSockchat
       assert @server.received_heartbeat?, 'Heartbeat not received on server'
     end
   end
-  
+
   def test_ask_for_clients
     wait_for_timeout do
       @client.connect 'Ze do Caixao'
@@ -60,7 +60,7 @@ class TestClient < TestSockchat
       other_clients.values.each{ |c| c.logout }
     end
   end
-  
+
   def test_echo
     wait_for_timeout do
       @client.connect 'PingPong Tester'
@@ -69,7 +69,7 @@ class TestClient < TestSockchat
       assert_equal @client.echoed, message, 'Message not echoed'
     end
   end
-  
+
   def test_client_sends_and_other_receives_messages
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'
@@ -77,14 +77,14 @@ class TestClient < TestSockchat
       other_client.ask_for_servers
       other_client.connect 'Curupira'
       message = 'Voce viu minha cabeca? Acho que deixei la atras!'
-  
+
       @client.send_message message
       other_client.listen
       other_client.logout
       assert_equal other_client.messages.last, "Mula Sem Cabeca: #{message}"
     end
   end
-  
+
   def test_other_sends_and_client_receives_messages
     wait_for_timeout do
       @client.connect 'Mula Sem Cabeca'

@@ -48,16 +48,28 @@ int get_socket(char *, int);
 void choose_server(char *, int *);
 
 // ------- Very Simple Functions --------
-void sigquit(){ exit(0); }
+// void sigquit(){ exit(0); }
+
+int server_socket, coordinator_socket;
+pthread_t listening_thread, beating_thread;
+
+void sigquit(){
+  pthread_cancel(listening_thread);
+  pthread_cancel(beating_thread);
+  close(server_socket);
+  exit(0);
+}
 
 int main(int argc, char *argv[])
 {
-  int server_socket, coordinator_socket, port;
+  // int server_socket, coordinator_socket, port;
+  int port;
   char string_ip[15], code;
-  pthread_t listening_thread, beating_thread;
+  // pthread_t listening_thread, beating_thread;
   void *arg;
 
   signal(SIGQUIT, sigquit); // Waiting to be killed (kill -QUIT <pid>)
+
 
   if(argc != 3){
     strcpy(string_ip, COORDINATOR_IP);
@@ -157,9 +169,9 @@ void server_listed_users(int sock){
   for(i = 0; i < size; i++){
     str = recv_string(sock);
     printf("%s\n", str.str);
+    free_string(str);
   }
   fflush(stdout);
-  free_string(str);
 }
 
 void server_echoed(int sock){
@@ -194,7 +206,6 @@ int handle_user(char code, int sock){
 
 int handle_server(char code, int sock){
   // printf("CODE: %c, %d\n", code, (int) code);
-  FILE * log;
   switch(code){
     case 'M':
       server_sent_message(sock); break;
@@ -203,10 +214,9 @@ int handle_server(char code, int sock){
     case 'E':
       server_echoed(sock); break;
     default:
-      log = fopen("log.txt", "w+");
-      fprintf(log, "Problem: code => %c, socket => %d", code, sock);
-      fclose(log);
-      return 1;
+      recv(sock, &code, sizeof(char), 0);
+      handle_server(code, sock);
+      // return 1;
   }
   return 0;
 }

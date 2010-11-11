@@ -77,7 +77,7 @@ class RealClient < IO
   end
 
   def logout
-    Process.kill 'TERM', self.pid
+    Process.kill 'QUIT', self.pid
     close unless closed?
   end
 

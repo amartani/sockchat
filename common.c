@@ -59,7 +59,8 @@ string recv_string(int sock)
     int n;
     n = read(sock, &result.size, sizeof(result.size));
     if (n < 0) error("ERROR");
-    result.str = (char*) malloc(result.size*sizeof(char));
+    result.str = (char*) malloc((result.size+1)*sizeof(char));
+    result.str[result.size] = '\0';
     n = read(sock, result.str, result.size*sizeof(char));
     if (n < 0) error("ERROR");
     return result;
