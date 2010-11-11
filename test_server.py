@@ -26,7 +26,7 @@ def recv_int(sock):
 def connect_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', PORT))
-    sock.settimeout(2.0)
+    sock.settimeout(3.0)
     return sock
 
 def start_server():
@@ -121,7 +121,7 @@ class TestServerWithMultipleClients():
         number = 0
         for sock in self.sockets:
             cmd = sock.recv(1)
-            assert "E" == cmd, number
+            assert "E" == cmd
             str_recv = recv_string(sock)
             assert ("Test number %d." % number) == str_recv
             number += 1
@@ -154,9 +154,28 @@ class TestServerWithMultipleClients():
             names.sort()
             assert usernames == names
 
+    def test_quit(self):
+        self.test_usernames()
+        disconnected = self.sockets.pop(-1)
+        disconnected.send("Q")
+        disconnected.close()
+        time.sleep(1.0)
+        usernames = list("client %d" % i for i in range(9))
+        for sock in self.sockets:
+            sock.send("L")
+            cmd = sock.recv(1)
+            assert "L" == cmd
+            users = recv_int(sock)
+            assert 9 == users
+            names = list()
+            for i in range(9):
+                name = recv_string(sock)
+                names.append(name)
+            names.sort()
+            assert usernames == names
+
     def test_disconnection(self):
         self.test_usernames()
-        time.sleep(1.0)
         disconnected = self.sockets.pop(-1)
         disconnected.close()
         for i in range(2):
