@@ -76,18 +76,18 @@ int main(int argc, char *argv[])
     strcpy(string_ip, COORDINATOR_IP);
     port = COORDINATOR_PORT;
 
+    coordinator_socket = get_socket(string_ip, port);
+    cmd_list_servers(coordinator_socket);
+
+    close(coordinator_socket);
+
+    choose_server(string_ip, &port);
 
   }else{
     strcpy(string_ip, argv[1]);
     port = atoi(argv[2]);
   }
 
-  coordinator_socket = get_socket(string_ip, port);
-  cmd_list_servers(coordinator_socket);
-
-  close(coordinator_socket);
-
-  choose_server(string_ip, &port);
   server_socket = get_socket(string_ip, port);
   cmd_connect(server_socket);
 
