@@ -159,7 +159,7 @@ class TestServerWithMultipleClients():
         disconnected = self.sockets.pop(-1)
         disconnected.send("Q")
         disconnected.close()
-        time.sleep(3.0)
+        time.sleep(0.5)
         usernames = list("client %d" % i for i in range(9))
         for sock in self.sockets:
             sock.send("L")
