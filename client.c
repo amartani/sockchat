@@ -1,4 +1,5 @@
 /**
+ * vim: sts=2 ts=2 sw=2 et
  * Server for Chat
  *
  * Dalton Pinto
@@ -74,6 +75,8 @@ int main(int argc, char *argv[])
   if(argc != 3){
     strcpy(string_ip, COORDINATOR_IP);
     port = COORDINATOR_PORT;
+
+
   }else{
     strcpy(string_ip, argv[1]);
     port = atoi(argv[2]);
