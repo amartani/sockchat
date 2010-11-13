@@ -292,8 +292,8 @@ void disconnect_user(client_node_t *client_node)
 
     next = client_node->next;
     prev = client_node->prev;
-    prev->next = next;
-    next->prev = prev;
+    if (prev) prev->next = next;
+    if (next) next->prev = prev;
 
     // Unlock client list
     unlock(clients_list->lock);
