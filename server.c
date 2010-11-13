@@ -7,7 +7,11 @@
  * - Threads: http://www.cs.cf.ac.uk/Dave/C/node32.html
  */
 
+//#define DEBUG_THREADS
+//#define DEBUG_CMD
+
 #include "common.c"
+#include "thread_helper.c"
 #include <errno.h>
 #include <netinet/tcp.h>
 
@@ -77,8 +81,7 @@ void initialize_clients_list()
     clients_list->size = 0;
 
     // Initialize lock
-    clients_list->lock = (pthread_rwlock_t*) malloc(sizeof(pthread_rwlock_t));
-    pthread_rwlock_init(clients_list->lock, NULL);
+    clients_list->lock = new_lock();
 }
 
 client_node_t *insert_client(int sock)
@@ -94,7 +97,7 @@ client_node_t *insert_client(int sock)
     new_client->watchdog = 0;
 
     // Lock client list for writer
-    pthread_rwlock_wrlock(clients_list->lock);
+    wlock(clients_list->lock);
 
     clients_list->size++;
 
@@ -108,7 +111,7 @@ client_node_t *insert_client(int sock)
     }
 
     // Unlock client list
-    pthread_rwlock_unlock(clients_list->lock);
+    unlock(clients_list->lock);
 
     return new_client;
 }
@@ -117,7 +120,7 @@ client_node_t *insert_client(int sock)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, newsockfd, portno, clilen;
+    int sockfd, newsockfd, portno, clilen, res;
     struct sockaddr_in serv_addr, cli_addr;
     pthread_t chld_thr;
     void *arg;
@@ -159,7 +162,11 @@ int main(int argc, char *argv[])
         memcpy(arg, &newsockfd, sizeof(newsockfd));
 
         // Create new thread
-        pthread_create(&chld_thr, 0, do_chld, arg);
+        res = pthread_create(&chld_thr, 0, do_chld, arg);
+        if (res)
+        {
+            error("ERROR creating thread");
+        }
     }
     return 0;
 }
@@ -191,8 +198,8 @@ void set_client_socket_options(int sock)
     struct timeval tv;
 
     // Set timeout
-    tv.tv_usec = 100;  /* 100 usec Timeout */
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+//    tv.tv_usec = 100;  /* 100 usec Timeout */
+//    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 
 }
 
@@ -215,11 +222,16 @@ void select_command(int sock, client_node_t *client_node)
     char command;
 
     n = recv(sock, &command, sizeof(command), 0);
-    if (n < 0)
+    if (n < 1)
     {
         socket_error_handler();
         return;
     }
+
+#ifdef DEBUG_CMD
+    printf("Recv command %c\n", command);
+    fflush(stdout);
+#endif
 
     switch (command) {
     case 'C':
@@ -254,7 +266,7 @@ void socket_error_handler()
         case EAGAIN:
             break;
         default:
-            perror("Socket error");
+            //perror("Socket error");
             break;
     }
 }
@@ -264,16 +276,16 @@ void disconnect_user(client_node_t *client_node)
 {
     client_node_t *next, *prev;
 
-    printf("Disconnecting %s.\n", client_node->nick.str);
-    fflush(stdout);
+//    printf("Disconnecting %s. -\n", client_node->nick.str);
+//    fflush(stdout);
 
     // Lock client list for writer
-    pthread_rwlock_wrlock(clients_list->lock);
+    wlock(clients_list->lock);
 
     // Kill threads
-    thread_cancel_if_not_self(client_node->thread);
-    thread_cancel_if_not_self(client_node->watchdog);
-    
+    //thread_cancel_if_not_self(client_node->thread);
+    //thread_cancel_if_not_self(client_node->watchdog);
+
     // Remove node from global list
     clients_list->size --;
 
@@ -287,7 +299,8 @@ void disconnect_user(client_node_t *client_node)
     free(client_node);
 
     // Unlock client list
-    pthread_rwlock_unlock(clients_list->lock);
+    unlock(clients_list->lock);
+
 }
 
 // commands
@@ -299,13 +312,13 @@ void cmd_set_nick(int sock, client_node_t *client_node)
     nick = recv_string(sock);
 
     // Lock client list for writing
-    pthread_rwlock_wrlock(clients_list->lock);
+    wlock(clients_list->lock);
 
     free_string(client_node->nick);
     client_node->nick = nick;
 
     // Unlock
-    pthread_rwlock_unlock(clients_list->lock);
+    unlock(clients_list->lock);
 }
 
 void cmd_list(int sock)
@@ -318,7 +331,7 @@ void cmd_list(int sock)
     if (res < 0) error("ERROR writing to socket");
 
     // Lock client list for reading
-    pthread_rwlock_rdlock(clients_list->lock);
+    rlock(clients_list->lock);
 
     // Send number of clients
     res = write(sock, &clients_list->size, sizeof(clients_list->size));
@@ -330,7 +343,7 @@ void cmd_list(int sock)
     }
 
     // Unlock
-    pthread_rwlock_unlock(clients_list->lock);
+    unlock(clients_list->lock);
 }
 
 void cmd_echo(int sock)
@@ -355,8 +368,8 @@ void cmd_heartbeat(client_node_t *client_node)
 
 void cmd_quit(client_node_t *client_node)
 {
-    thread_cancel_if_not_self(client_node->watchdog);
-    thread_cancel_if_not_self(client_node->thread);
+    //thread_cancel_if_not_self(client_node->watchdog);
+    //thread_cancel_if_not_self(client_node->thread);
     disconnect_user(client_node);
     pthread_exit(NULL);
 }
@@ -390,7 +403,7 @@ void *watchdog(void *arg)
 void thread_cancel_if_not_self(pthread_t thread)
 {
     if (thread == 0) return;
-    if (thread == pthread_self()) return;
+    if (pthread_equal(thread, pthread_self()) == 0) return;
     pthread_cancel(thread);
 }
 
