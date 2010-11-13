@@ -12,7 +12,6 @@
 
 #include "common.c"
 #include "thread_helper.c"
-#include <errno.h>
 #include <netinet/tcp.h>
 
 // function prototypes
@@ -283,8 +282,8 @@ void disconnect_user(client_node_t *client_node)
     wlock(clients_list->lock);
 
     // Kill threads
-    //thread_cancel_if_not_self(client_node->thread);
-    //thread_cancel_if_not_self(client_node->watchdog);
+    thread_cancel_if_not_self(client_node->thread);
+    thread_cancel_if_not_self(client_node->watchdog);
 
     // Remove node from global list
     clients_list->size --;
@@ -294,13 +293,15 @@ void disconnect_user(client_node_t *client_node)
     prev->next = next;
     next->prev = prev;
 
-    // Free memory
-    free_string(client_node->nick);
-    free(client_node);
-
     // Unlock client list
     unlock(clients_list->lock);
 
+    // Close socket
+    close(client_node->sock);
+
+    // Free memory
+    free_string(client_node->nick);
+    free(client_node);
 }
 
 // commands
@@ -323,19 +324,17 @@ void cmd_set_nick(int sock, client_node_t *client_node)
 
 void cmd_list(int sock)
 {
-    int res, i;
+    int i;
     client_node_t *client_node;
 
     // Send command
-    res = write(sock, "L", 1);
-    if (res < 0) error("ERROR writing to socket");
+    send_forced(sock, "L", 1);
 
     // Lock client list for reading
     rlock(clients_list->lock);
 
     // Send number of clients
-    res = write(sock, &clients_list->size, sizeof(clients_list->size));
-    if (res < 0) error("ERROR writing to socket");
+    send_forced(sock, &clients_list->size, sizeof(clients_list->size));
 
     // Send nickname of each client
     for (client_node = clients_list->first; client_node != NULL; client_node = client_node->next) {
@@ -353,8 +352,7 @@ void cmd_echo(int sock)
 
     str = recv_string(sock);
 
-    res = write(sock, "E", 1);
-    if (res < 0) error("ERROR writing to socket");
+    send_forced(sock, "E", 1);
 
     send_string(sock, str);
 
@@ -378,8 +376,7 @@ void cmd_unknown(int sock)
 {
     int n;
 
-    n = write(sock,"Desconhecido",12);
-    if (n < 0) error("ERROR writing to socket");
+    send_forced(sock,"Desconhecido",12);
 }
 
 void set_watchdog(client_node_t *client_node)

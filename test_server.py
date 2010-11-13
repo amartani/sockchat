@@ -26,7 +26,7 @@ def recv_int(sock):
 def connect_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', PORT))
-    sock.settimeout(5.0)
+    #sock.settimeout(5.0)
     return sock
 
 def start_server():

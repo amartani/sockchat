@@ -34,6 +34,8 @@ string string_create(char *);
 string recv_string(int sock);
 void send_string(int sock, string str);
 void free_string(string str);
+void send_forced(int sock, void *buf, size_t size);
+void recv_forced(int sock, void *buf, size_t size);
 
 // ------- Generic helper functions --------
 
@@ -46,34 +48,38 @@ void error(char *msg)
 // helper function to send and receive string structs
 
 string string_create(char *char_vector){
-  string str;
-  char_vector[strlen(char_vector)-1] = '\0';
-  str.size = strlen(char_vector);
-  str.str = (char*) malloc(str.size*sizeof(char));
-  strcpy(str.str, char_vector);
-  return str;
+    string str;
+    int len;
+
+    len = strlen(char_vector);
+    if (char_vector[len-1] == '\n') {
+        char_vector[len-1] = '\0';
+        len--;
+    }
+
+    str.size = len;
+    str.str = (char*) malloc(len*sizeof(char));
+    strcpy(str.str, char_vector);
+    return str;
 }
 
 string recv_string(int sock)
 {
     string result;
-    int n;
-    n = read(sock, &result.size, sizeof(result.size));
-    if (n < 0) error("ERROR on recv_string");
+
+    recv_forced(sock, &result.size, sizeof(result.size));
+
     result.str = (char*) malloc((result.size+1)*sizeof(char));
+    recv_forced(sock, result.str, result.size*sizeof(char));
     result.str[result.size] = '\0';
-    n = read(sock, result.str, result.size*sizeof(char));
-    if (n < 0) error("ERROR on recv_string");
+
     return result;
 }
 
 void send_string(int sock, string str)
 {
-    int n;
-    n = write(sock, &str.size, sizeof(str.size));
-    if (n < 0) error("ERROR on send_string");
-    n = write(sock, str.str, str.size*sizeof(char));
-    if (n < 0) error("ERROR on send_string");
+    send_forced(sock, &str.size, sizeof(str.size));
+    send_forced(sock, str.str, str.size*sizeof(char));
 }
 
 void free_string(string str)
