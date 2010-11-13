@@ -10,6 +10,8 @@
 //#define DEBUG_THREADS
 //#define DEBUG_CMD
 
+#define DEFAULT_PORT 8000
+
 #include "common.c"
 #include "thread_helper.c"
 #include <netinet/tcp.h>
@@ -125,8 +127,9 @@ int main(int argc, char *argv[])
     void *arg;
 
     if (argc < 2) {
-        fprintf(stderr,"ERROR, no port provided\n");
-        exit(1);
+        portno = DEFAULT_PORT;
+    } else {
+        portno = atoi(argv[1]);
     }
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -136,7 +139,6 @@ int main(int argc, char *argv[])
     set_listening_socket_options(sockfd);
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(portno);
