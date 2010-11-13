@@ -26,7 +26,7 @@ def recv_int(sock):
 def connect_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', PORT))
-    sock.settimeout(3.0)
+    sock.settimeout(5.0)
     return sock
 
 def start_server():
@@ -159,7 +159,7 @@ class TestServerWithMultipleClients():
         disconnected = self.sockets.pop(-1)
         disconnected.send("Q")
         disconnected.close()
-        time.sleep(1.0)
+        time.sleep(3.0)
         usernames = list("client %d" % i for i in range(9))
         for sock in self.sockets:
             sock.send("L")

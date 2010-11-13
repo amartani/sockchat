@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <netdb.h>
+#include <errno.h>
 
 #define SERVER_LIST_SIZE 10
 
@@ -58,11 +59,11 @@ string recv_string(int sock)
     string result;
     int n;
     n = read(sock, &result.size, sizeof(result.size));
-    if (n < 0) error("ERROR");
+    if (n < 0) error("ERROR on recv_string");
     result.str = (char*) malloc((result.size+1)*sizeof(char));
     result.str[result.size] = '\0';
     n = read(sock, result.str, result.size*sizeof(char));
-    if (n < 0) error("ERROR");
+    if (n < 0) error("ERROR on recv_string");
     return result;
 }
 
@@ -70,13 +71,53 @@ void send_string(int sock, string str)
 {
     int n;
     n = write(sock, &str.size, sizeof(str.size));
-    if (n < 0) error("ERROR");
+    if (n < 0) error("ERROR on send_string");
     n = write(sock, str.str, str.size*sizeof(char));
-    if (n < 0) error("ERROR");
+    if (n < 0) error("ERROR on send_string");
 }
 
 void free_string(string str)
 {
-    free(str.str);
+    if (str.str != NULL)
+    {
+        free(str.str);
+    }
 }
 
+void send_forced(int sock, void *buf, size_t size)
+{
+    size_t transfered;
+
+    while (1) {
+        transfered = send(sock, buf, size, 0);
+        if (transfered == size) break;
+
+        size -= transfered;
+        buf += transfered;
+        switch (errno) {
+            case EAGAIN:
+                continue;
+            default:
+                error("ERROR on send_forced");
+        }
+    }
+}
+
+void recv_forced(int sock, void *buf, size_t size)
+{
+    size_t transfered;
+
+    while (1) {
+        transfered = recv(sock, buf, size, 0);
+        if (transfered == size) break;
+
+        size -= transfered;
+        buf += transfered;
+        switch (errno) {
+            case EAGAIN:
+                continue;
+            default:
+                error("ERROR on recv_forced");
+        }
+    }
+}
