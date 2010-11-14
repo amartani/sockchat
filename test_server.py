@@ -5,7 +5,7 @@ import time
 import sys
 
 PORT = 25864
-PROGRAM = "./server.out"
+PROGRAM = "./server"
 N_CLIENTS = 10
 
 def recv_string(sock):
@@ -41,6 +41,8 @@ class TestServer():
     def setup_method(self, method):
         self.server_process = start_server()
         self.socket = connect_socket()
+        self.socket.send("C")
+        send_string(self.socket, "A")
 
     def teardown_method(self, method):
         self.socket.close()
@@ -104,6 +106,9 @@ class TestServerWithMultipleClients():
     def setup_method(self, method):
         self.server_process = start_server()
         self.sockets = list(connect_socket() for i in range(10))
+        for sock in self.sockets:
+            sock.send("C")
+            send_string(sock, "a")
 
     def teardown_method(self, method):
         for socket in self.sockets:
