@@ -11,6 +11,7 @@
 //#define DEBUG_CMD
 
 #define DEFAULT_PORT 8000
+#define HEARTBEAT_TIMEOUT 5
 
 #include "common.c"
 #include "thread_helper.c"
@@ -394,7 +395,7 @@ void *watchdog(void *arg)
 {
     client_node_t* client_node = (client_node_t*) arg;
 
-    sleep(5);
+    sleep(HEARTBEAT_TIMEOUT);
 
     disconnect_user(arg);
 }
