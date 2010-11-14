@@ -49,8 +49,11 @@ class TestServer():
         time.sleep(1.0)
 
     def test_unknown(self):
-        self.socket.send("P")
-        msg = self.socket.recv(12)
+        sock = self.socket
+        sock.send("P")
+        cmd = sock.recv(1)
+        assert "E" == cmd
+        msg = recv_string(sock)
         assert msg == "Desconhecido"
 
     def test_echo(self):
@@ -196,15 +199,17 @@ class TestServerWithMultipleClients():
             names.sort()
             assert usernames == names
 
-#    def test_message(self):
-#        self.test_usernames()
-#        message = "TEST MESSAGE"
-#        sender = self.sockets[0]
-#        sender.send("M")
-#        send_string(sender, message)
-#        for sock in self.sockets:
-#            assert "M" == sock.recv(1)
-#            assert "client 0" == recv_string(sock)
-#            assert message == recv_string(sock)
-
+    def test_message(self):
+        self.test_usernames()
+        message = "TEST MESSAGE"
+        sender = self.sockets[0]
+        sender.send("M")
+        send_string(sender, message)
+        for sock in self.sockets:
+            cmd = sock.recv(1)
+            assert "M" == cmd
+            user = recv_string(sock)
+            assert "client 0" == user
+            message_recv = recv_string(sock)
+            assert message == message_recv
 

@@ -378,8 +378,10 @@ void cmd_quit(client_node_t *client_node)
 void cmd_unknown(int sock)
 {
     int n;
+    string msg = string_create("Desconhecido");
 
-    send_forced(sock,"Desconhecido",12);
+    send_forced(sock, "E", 1);
+    send_string(sock, msg);
 }
 
 void set_watchdog(client_node_t *client_node)
