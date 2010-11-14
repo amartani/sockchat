@@ -155,11 +155,13 @@ void cmd_echo(int sock){
 
 // ------- Server Responses --------
 void server_sent_message(int sock){
-  string str;
-  str = recv_string(sock);
-  printf("Message:\n%s\n", str.str);
+  string sender, message;
+  sender = recv_string(sock);
+  message = recv_string(sock);
+  printf("Message from %s:\n%s\n", sender.str, message.str);
   fflush(stdout);
-  free_string(str);
+  free_string(sender);
+  free_string(message);
 }
 
 void server_listed_users(int sock){
