@@ -9,9 +9,10 @@
 
 //#define DEBUG_THREADS
 //#define DEBUG_CMD
+#define DEBUG_CONNECTION
 
 #define DEFAULT_PORT 8000
-#define HEARTBEAT_TIMEOUT 5
+#define HEARTBEAT_TIMEOUT 20
 
 #include "common.c"
 #include "thread_helper.c"
@@ -99,6 +100,11 @@ client_node_t *insert_client(int sock)
 
     new_client->thread = pthread_self();
     new_client->watchdog = 0;
+
+#ifdef DEBUG_CONNECTION
+    puts("Client connecting..");
+    fflush(stdout);
+#endif
 
     // Lock client list for writer
     wlock(clients_list->lock);
@@ -284,8 +290,10 @@ void disconnect_user(client_node_t *client_node)
 {
     client_node_t *next, *prev;
 
-//    printf("Disconnecting %s. -\n", client_node->nick.str);
-//    fflush(stdout);
+#ifdef DEBUG_CONNECTION
+    printf("Disconnecting %s. -\n", client_node->nick.str);
+    fflush(stdout);
+#endif
 
     // Lock client list for writer
     wlock(clients_list->lock);
