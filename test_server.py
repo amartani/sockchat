@@ -26,7 +26,7 @@ def recv_int(sock):
 def connect_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', PORT))
-    #sock.settimeout(5.0)
+    sock.settimeout(1.0)
     return sock
 
 def start_server():
@@ -202,7 +202,7 @@ class TestServerWithMultipleClients():
     def test_message(self):
         self.test_usernames()
         message = "TEST MESSAGE"
-        sender = self.sockets[0]
+        sender = self.sockets.pop(0)
         sender.send("M")
         send_string(sender, message)
         for sock in self.sockets:
@@ -212,4 +212,5 @@ class TestServerWithMultipleClients():
             assert "client 0" == user
             message_recv = recv_string(sock)
             assert message == message_recv
+        self.sockets.append(sender)
 
