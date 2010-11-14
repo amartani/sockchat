@@ -58,6 +58,7 @@ void set_listening_socket_options(int sockfd);
 void set_watchdog(client_node_t *client_node);
 void *watchdog(void *arg);
 void thread_cancel_if_not_self(pthread_t thread);
+void send_message_to_destination(client_node_t *receiver, client_node_t *sender, string message);
 
 // ---- commands ----
 
@@ -66,6 +67,7 @@ void cmd_list(int sock);
 void cmd_echo(int sock);
 void cmd_heartbeat(client_node_t *client_node);
 void cmd_quit(client_node_t *client_node);
+void cmd_message(client_node_t *client_node);
 void cmd_unknown(int sock);
 
 // -------- Functions -----------
@@ -200,8 +202,9 @@ void set_client_socket_options(int sock)
     struct timeval tv;
 
     // Set timeout
-//    tv.tv_usec = 100;  /* 100 usec Timeout */
-//    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;  /* 100 usec Timeout */
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 
 }
 
@@ -250,6 +253,9 @@ void select_command(int sock, client_node_t *client_node)
         break;
     case 'Q':
         cmd_quit(client_node);
+        break;
+    case 'M':
+        cmd_message(client_node);
         break;
     default:
         cmd_unknown(sock);
@@ -375,6 +381,27 @@ void cmd_quit(client_node_t *client_node)
     pthread_exit(NULL);
 }
 
+void cmd_message(client_node_t *client_node)
+{
+    string message;
+    int sock = client_node->sock;
+    client_node_t *receiver;
+
+    message = recv_string(sock);
+
+    // Lock client list
+    rlock(clients_list->lock);
+
+    for (receiver = clients_list->first; receiver; receiver = receiver->next) {
+        if (receiver == client_node) continue;
+        send_message_to_destination(receiver, client_node, message);
+    }
+
+    // Unlock
+    unlock(clients_list->lock);
+
+}
+
 void cmd_unknown(int sock)
 {
     int n;
@@ -407,5 +434,12 @@ void thread_cancel_if_not_self(pthread_t thread)
     if (thread == 0) return;
     if (pthread_equal(thread, pthread_self()) == 0) return;
     pthread_cancel(thread);
+}
+
+void send_message_to_destination(client_node_t *receiver, client_node_t *sender, string message)
+{
+    send_forced(receiver->sock, "M", 1);
+    send_string(receiver->sock, sender->nick);
+    send_string(receiver->sock, message);
 }
 
