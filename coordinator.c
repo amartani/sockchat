@@ -250,6 +250,9 @@ void cmd_c(int sock) {
    pthread_t this_thread;
    server_info s;
    int i; 
+
+   send_forced(sock, "C", 1);
+
    for(i = 0; i < SERVERS; i++) {
         s = to_server_info(server_list[i]);
         printf("Enviando informacao de servidor: \n");
