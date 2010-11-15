@@ -9,9 +9,6 @@
 #include <time.h>
 #include <netinet/tcp.h>
 
-#define COORDINATOR_IP "127.0.0.1"
-#define COORDINATOR_PORT 5000
-
 // ------- Global Variables --------
 server_info servers[SERVER_LIST_SIZE];
 
