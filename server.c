@@ -208,8 +208,8 @@ void set_client_socket_options(int sock)
     struct timeval tv;
 
     // Set timeout
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;  /* 100 usec Timeout */
+    tv.tv_sec = 0;
+    tv.tv_usec = 50000;  /* 0.05 sec Timeout */
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 
 }
