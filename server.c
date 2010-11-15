@@ -53,6 +53,7 @@ void *do_chld(void *arg);
 void select_command(int sock, client_node_t *client_node);
 void set_client_socket_options(int sock);
 void client_handle(int sock);
+void coordinator_handle(int sock);
 void disconnect_user(client_node_t *client_node);
 void socket_error_handler();
 void set_listening_socket_options(int sockfd);
@@ -195,11 +196,23 @@ void set_listening_socket_options(int sockfd)
 void *do_chld(void *arg)
 {
     int sock = *((int*)arg);
+    char cmd;
     free(arg);
 
-    set_client_socket_options(sock);
+    recv_forced(sock, &cmd, sizeof(cmd));
 
-    client_handle(sock);
+    switch(cmd) {
+        case 'C':
+            client_handle(sock);
+            break;
+        case 'S':
+            coordinator_handle(sock);
+            break;
+        default:
+            cmd_unknown(sock);
+            break;
+    }
+
 }
 
 // Set common options for client sockets
@@ -214,13 +227,26 @@ void set_client_socket_options(int sock)
 
 }
 
+// Handle a connection with a coordinator
+void coordinator_handle(int sock)
+{
+    while (1) {
+        send_forced(sock, "S", 1);
+        sleep(3);
+    }
+}
+
 // Handle a connection with a client
 
 void client_handle(int sock)
 {
     client_node_t *client_node = insert_client(sock);
 
+    set_client_socket_options(sock);
     set_watchdog(client_node);
+
+    cmd_set_nick(sock, client_node);
+
     while (1) {
         select_command(sock, client_node);
     }

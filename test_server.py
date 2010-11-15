@@ -219,3 +219,23 @@ class TestServerWithMultipleClients():
             assert message == message_recv
         self.sockets.append(sender)
 
+class TestCoordinator():
+    def setup_method(self, method):
+        self.server_process = start_server()
+        self.socket = connect_socket()
+        self.socket.send("S")
+
+    def teardown_method(self, method):
+        self.socket.close()
+        self.server_process.kill()
+        self.server_process.wait()
+        time.sleep(1.0)
+
+    def test_heartbeat(self):
+        sock = self.socket
+        sock.settimeout(5.0)
+        cmd = sock.recv(1)
+        assert cmd == 'S'
+        cmd = sock.recv(1)
+        assert cmd == 'S'
+
