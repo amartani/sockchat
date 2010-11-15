@@ -14,6 +14,10 @@
 #include <errno.h>
 
 #define SERVER_LIST_SIZE 10
+#define COORDINATOR_IP "127.0.0.1"
+#define COORDINATOR_PORT 10000
+#define SERVER_PORT_START 6000
+#define SERVERS 10
 
 // ------- String --------
 struct string {

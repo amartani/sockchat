@@ -15,9 +15,6 @@
 #include <unistd.h>
 
 // constants
-#define COORDINATOR_PORT 10000
-#define SERVER_PORT_START 6000
-#define SERVERS 10
 
 
 
