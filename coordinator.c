@@ -70,6 +70,8 @@ void cmd_c(int sock);
 void start_server(const char *server_exec, int server_port) {
     char comando[1024] = "";
     char porta[1024];
+    char *argv[3];
+
     sprintf(porta, "%d", server_port);
     strcat(comando, server_exec);
     strcat(comando, " ");
@@ -77,7 +79,14 @@ void start_server(const char *server_exec, int server_port) {
     printf("Inicializando servidor. executando comando: [%s]\n", comando);
     // TODO resolver como starta os servidores...
     // dica: alexandre disse que dah pra usar execve e fork, mas eu nao sei fazer
-} 
+
+    argv[0] = server_exec;
+    argv[1] = porta;
+    argv[2] = NULL;
+    if (fork() == 0) {
+        execv(server_exec, argv);
+    }
+}
 
 
 
