@@ -30,6 +30,7 @@ void cmd_send_message(int sock);
 void cmd_heartbeat(int sock);
 void cmd_list_users(int sock);
 void cmd_echo(int sock);
+void cmd_quit(int sock);
 
 // ------- Server Response Prototypes --------
 void server_sent_message(int sock);
@@ -146,6 +147,10 @@ void cmd_list_users(int sock){
   send(sock, "L", sizeof(char), 0);
 }
 
+void cmd_quit(int sock) {
+  send(sock, "Q", sizeof(char), 0);
+}
+
 void cmd_echo(int sock){
   send_string_command(sock, 'E');
 }
@@ -198,6 +203,7 @@ int handle_user(char code, int sock){
     case 'E':
       cmd_echo(sock); break;
     case 'Q':
+      cmd_quit(sock);
       return 1;
     default:
       printf("UNKNOWN COMMAND!\n");
