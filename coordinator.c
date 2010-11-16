@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 // constants
 
@@ -43,8 +44,9 @@ void print_server_list();
 void print_server_node(server_node s);
 
 void start_servers();
-void start_server(const char*, int server_port);
-
+void start_server(char*, int server_port);
+void *do_heartbeat(void *);
+int get_socket(char *, int port);
 
 void start_monitor_thread();
 void *monitor_thread_loop(void *);
@@ -64,7 +66,7 @@ void cmd_c(int sock);
 // inicializa a thread que monitora se os servidores estao online
 
 // inicializa um servidor (server exec é o comando, server port é a porta)
-void start_server(const char *server_exec, int server_port) {
+void start_server(char *server_exec, int server_port) {
     char comando[1024] = "";
     char porta[1024];
     char *argv[3];
@@ -83,8 +85,90 @@ void start_server(const char *server_exec, int server_port) {
     if (fork() == 0) {
         execv(server_exec, argv);
     }
+
+    // Copy argument to be passed to do_heartbeat
+    void *arg;
+    arg = malloc(sizeof(server_port));
+    memcpy(arg, &server_port, sizeof(server_port));
+
+    // Create new thread
+    pthread_t dhb_thr;
+    int res = pthread_create(&dhb_thr, 0, do_heartbeat, arg);
+    if (res)
+    {
+            error("ERROR creating thread");
+    } 
 }
 
+// New threads calls this
+void *do_heartbeat(void *arg)
+{
+    int boo = 0; 
+   
+    // create the server
+    int server_port = *((int*)arg);	
+    server_node sn;
+    sn.port = server_port;
+
+    char letter_send = 'S';
+    printf("Chegou ANTES do get_socket\n");
+    sleep(5);
+    int sock = get_socket("127.0.0.1",server_port);
+    printf("Chegou DEPOIS do get_socket\n");
+    free(arg);    
+
+	
+    while (1) {
+
+
+
+	//send "S" to server
+	printf("Chegou ANTES do send\n");
+	send_forced(sock, &letter_send, sizeof(letter_send));
+	printf("Chegou DEPOIS do send\n");
+
+	//try to listen the server	
+	struct timeval tv;
+
+    	// Set timeout
+    	tv.tv_sec = 5;
+    	tv.tv_usec = 0;  /* 5 sec Timeout */
+    	if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval))==0)
+	{
+	    printf("Chegou ANTES do receive\n");
+	    char c;
+            int i;
+	    i = recv(sock, &c, sizeof(char), 0);
+	    printf("Chegou DEPOIS do receive\n");
+	    if ((i==1)&&(c=='S')) {	}
+  	    else 
+	    { 
+		printf("ERRO NO RECEIVE\n");
+		// to do_heartbeat again
+ 		do_heartbeat(&arg);
+	    } 	
+	}
+   }
+   printf("Enviou e recebeu do servidor o heartbeat 'S'\n"); 
+}
+
+int get_socket(char *ip_address, int port){
+    int sock;
+    struct sockaddr_in coordinator_address;
+    struct hostent *host;
+ 
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(sock < 0) error("ERROR opening coordinator socket");
+
+    host = gethostbyname(ip_address);
+
+    coordinator_address.sin_family = AF_INET;
+    coordinator_address.sin_port = htons(port);
+    coordinator_address.sin_addr = *((struct in_addr *)host->h_addr);
+    bzero(&(coordinator_address.sin_zero),8);
+    if( connect(sock, (struct sockaddr *)&coordinator_address, sizeof(coordinator_address)) < 0 ) error("ERROR connecting");
+    return sock;
+}
 
 
 // -------- Functions -----------
@@ -275,7 +359,7 @@ int main(int argc, char *argv[])
     initialize_server_list();
     start_servers();
     print_server_list();
-    start_monitor_thread();
+    //start_monitor_thread();
     
     handle_connections();
     pthread_exit(&main_thread);
