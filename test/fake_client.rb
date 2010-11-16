@@ -7,7 +7,7 @@ class FakeClient
   end
 
   def ask_for_servers
-    @coordinator_socket = TCPSocket.new '127.0.0.1', 5000
+    @coordinator_socket = TCPSocket.new '127.0.0.1', 10_000
     @coordinator_socket.write 'C'
     match_command 'C', @coordinator_socket.read(1)
     @servers = 10.times.map do
