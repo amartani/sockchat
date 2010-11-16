@@ -249,12 +249,13 @@ void cmd_s(int sock) {
 void cmd_c(int sock) {
    pthread_t this_thread;
    server_info s;
-   int i; 
+   int i;
 
    send_forced(sock, "C", 1);
 
    for(i = 0; i < SERVERS; i++) {
         s = to_server_info(server_list[i]);
+        send(sock, &s, sizeof(server_info), 0);
         printf("Enviando informacao de servidor: \n");
         print_server_info(s);
     }
