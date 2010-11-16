@@ -8,11 +8,11 @@ testserver: server
 	py.test test_server.py
 testclient: client
 	ruby test_client.rb
-client: client.c
+client: client.c common.c
 	$(CC) $(CFLAGS) client.c -o client -pthread -lm
-server: server.c
+server: server.c common.c
 	$(CC) $(CFLAGS) server.c -o server -pthread -lm
-coordinator: coordinator.c
+coordinator: coordinator.c common.c
 	$(CC) $(CFLAGS) coordinator.c -o coordinator -pthread -lm
 clean:
 	rm -f client server coordinator
